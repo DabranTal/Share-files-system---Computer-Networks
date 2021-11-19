@@ -12,10 +12,12 @@ if len(sys.argv) != 2:
 while True:
     client_socket, client_address = server.accept()
     print('Connection from: ', client_address)
-    data = client_socket.recv(100)
-    if data.decode('utf-8') == 0:
+    user_id = client_socket.recv(100)
+    if user_id.decode('utf-8') == 0:
         id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
         client_socket.send(str.encode(id_user))
+    else
+        clinet_socket.send(user_id)   
     print('Received: ', data)
     client_socket.send(data.upper())
     client_socket.close()
