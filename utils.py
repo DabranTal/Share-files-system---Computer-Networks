@@ -16,8 +16,29 @@ class Folder:
 
     def __init__(self, cur_path):
         self.path = cur_path
-        self.sub_folders =[]
-        self.files =[]
+        self.sub_folders = []
+        self.files = []
+
+
+def data_analysis_2(data):
+    str_data = data.decode('utf-8')
+    header_data = []
+    for index in range(len(str_data) - 1, len(str_data), 1):
+        header_data.append(str_data[index: index + 1])
+    for index in range(len(str_data) - 2, len(str_data) - 1, 1):
+        header_data.append(str_data[index: index + 1])
+    for index in range(len(str_data) - 5, len(str_data) - 2, 3):
+        header_data.append(str_data[index: index + 3])
+    header_data[2] = 1000 - int(header_data[2])
+    n = int(header_data[2])
+    if 0 == n:
+        header_data.append(None)
+    else:
+        for index in range(len(str_data) - 5 - n, len(str_data) - 5, n):
+            header_data.append(str_data[index: index + n])
+    header_data[3] = header_data[3].replace('\\', '')
+    return header_data
+
 
 def data_analysis(data):
     str_data = str(data)
