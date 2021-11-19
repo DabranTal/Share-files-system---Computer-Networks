@@ -49,9 +49,11 @@ def main():
             header = client_socket.recv(1024)
             header = utils.data_analysis_2(header)
             file = client_socket.recv(10000)
+            print(file.decode('utf-8'))
             print('file name: ', header[3])
             with open(str(user_folder) + header[3], 'wb') as f:
                 f.write(file)
+                f.close()
         else:
             client_socket.send(user_id)
         print('\nReceived: ', user_id)

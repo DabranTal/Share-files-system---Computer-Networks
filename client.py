@@ -42,9 +42,7 @@ def send_files(folder, main_path, sock):
             were_read = g.read()
         to_send = relative_path + str(1000-path_len) + str(ADD_FOLDER) + str(ADD_FOLDER)
         sock.send(str.encode(to_send))
-        answer = sock.recv(1024)
-        if 'OK' == answer.decode('utf-8'):
-            sock.send(were_read)
+        sock.send(were_read)
 
 
 def main():
