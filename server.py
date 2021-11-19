@@ -1,3 +1,4 @@
+
 import random
 import socket
 import string
@@ -25,8 +26,10 @@ def data_analysis(data):
     return header_data
 
 
-def create_a_file(userid):
-    file = open(userid, "x")
+def create_a_floder(userid, directory):
+    path = os.path.join(directory, userid)
+    os.mkdir(path)
+
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
