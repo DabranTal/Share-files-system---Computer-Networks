@@ -4,7 +4,7 @@ from sys import platform
 import os
 
 def is_this_path_exits(path):
-    #TO DO CHECK IF FOLDER EXISTS
+    return os.path.exists(path)
 
 def build_folders_map(path):
     #TO DO BUILD FOLDER MAP
