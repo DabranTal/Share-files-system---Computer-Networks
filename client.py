@@ -3,6 +3,12 @@ import sys
 from sys import platform
 import os
 
+def is_this_path_exits(path):
+    #TO DO CHECK IF FOLDER EXISTS
+
+def build_folders_map(path):
+    #TO DO BUILD FOLDER MAP
+
 # Initialize all the variable we got as arguments
 ip_server = sys.argv[1]
 port_server = sys.argv[2]
