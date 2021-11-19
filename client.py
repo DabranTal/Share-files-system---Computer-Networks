@@ -3,10 +3,12 @@ import sys
 from sys import platform
 import os
 import utils
-ADD_FOLDER = b'0001'
-ADD_FILE = b'0010'
-UPDATE_FILE = b'0100'
-DELETE_FILE = b'1000'
+ADD_FOLDER = 1
+ADD_FILE = 2
+UPDATE_FILE = 3
+DELETE_FILE = 4
+FINISH = 1
+NO_FINISH = 0
 SEGMENT_SIZE = 1024
 INT_IN_BITS = 32
 BITS_ON_BYTE = 8
@@ -36,9 +38,10 @@ def send_files(folder, main_path, sock):
         bits_to_read = SEGMENT_SIZE - path_len - INT_IN_BITS - BITS_ON_BYTE
         file = open(f)
         were_read = file.read(bits_to_read)
-        to_send = were_read + relative_path + str(bytes(path_len)) + str(ADD_FOLDER) + str(ADD_FILE)
+        to_send = were_read + relative_path + str(path_len) + str(ADD_FOLDER) + str(ADD_FILE)
         to_send = str.encode(to_send)
-        x = 5
+        a = utils.data_analysis(to_send)
+        x = 8
 
 
 
