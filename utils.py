@@ -19,7 +19,7 @@ class Folder:
         self.sub_folders =[]
         self.files =[]
 
-        def data_analysis(data):
+def data_analysis(data):
     str_data = str(data)
     header_data = []
     for index in range(len(str_data) - 4, len(str_data), 4):
