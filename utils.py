@@ -19,6 +19,25 @@ class Folder:
         self.sub_folders =[]
         self.files =[]
 
+        def data_analysis(data):
+    str_data = str(data)
+    header_data = []
+    for index in range(len(str_data) - 4, len(str_data), 4):
+        header_data.append(str_data[index: index + 4])
+    for index in range(len(str_data) - 5, len(str_data) - 4, 1):
+        header_data.append(str_data[index: index + 1])
+    for index in range(len(str_data) - 8, len(str_data) - 5, 3):
+        header_data.append(str_data[index: index + 3])
+    for index in range(len(str_data) - 40, len(str_data) - 8, 32):
+        header_data.append(str_data[index: index + 32])
+    n = int(header_data[3], 2)
+    for index in range(len(str_data) - 40 - n, len(str_data) - 40, n):
+        header_data.append(str_data[index: index + n])
+    for index in range(0, len(str_data) - 40 - n, len(str_data) - 40 - n):
+        header_data.append(str_data[index: index + len(str_data) - 40 - n])
+    return header_data
+
+        
 
 def is_this_path_exits(path):
     return os.path.exists(path)
