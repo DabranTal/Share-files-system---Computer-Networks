@@ -19,9 +19,8 @@ class Folder:
         self.sub_folders =[]
         self.files =[]
 
-
 def data_analysis(data):
-    str_data = data.decode('utf-8')
+    str_data = str(data)
     header_data = []
     for index in range(len(str_data) - 4, len(str_data), 4):
         header_data.append(str_data[index: index + 4])
