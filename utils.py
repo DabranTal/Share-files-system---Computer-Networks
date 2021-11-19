@@ -2,7 +2,11 @@ import socket
 import sys
 from sys import platform
 import os
-import utils
+ADD_FOLDER = 0x0001
+ADD_FILE = 0x0010
+UPDATE_FILE = 0x0100
+DELETE_FILE = 0x1000
+SEGMENT_SIZE = 1024
 
 
 class Folder:
@@ -24,8 +28,8 @@ def build_folders_map(folder, directory, backslash, folder_path):
     for file in directory:
         file_name, extension = os.path.splitext(file)
         if '' == extension:
-            folder.sub_folders.append(utils.Folder(folder_path + backslash + file_name))
+            folder.sub_folders.append(Folder(folder_path + backslash + file_name))
         else:
             folder.files.append((folder_path + backslash + file))
     for i in range(len(folder.sub_folders)):
-        build_folders_map(folder.sub_folders[i], os.listdir(folder.sub_folders[i].path))
+        build_folders_map(folder.sub_folders[i], os.listdir(folder.sub_folders[i].path), backslash, folder.sub_folders[i].path)
