@@ -32,31 +32,31 @@ def create_a_floder(userid, directory):
     return path
 
 
-def main():
-    server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server.bind(('', 12345))
-    server.listen(0)
-    if len(sys.argv) != 2:
-        exit()
-    while True:
-        client_socket, client_address = server.accept()
-        print('Connection from: ', client_address)
-        user_id = client_socket.recv(1024)
-        if user_id.decode('utf-8') == '0':
-            id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
-            client_socket.send(str.encode(id_user))
-            user_folder = create_a_floder(id_user, os.getcwd())
-            header = client_socket.recv(1024)
-            header = utils.data_analysis_2(header)
-            file = client_socket.recv(10000)
-            print(file.decode('utf-8'))
-            print('file name: ', header[3])
-            with open(str(user_folder) + header[3], 'wb') as f:
+server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.bind(('', 12345))
+server.listen(0)
+if len(sys.argv) != 2:
+    exit()
+while True:
+    client_socket, client_address = server.accept()
+    print('Connection from: ', client_address)
+    user_id = client_socket.recv(1024)
+    if user_id.decode('utf-8') == '0':
+        id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
+        client_socket.send(str.encode(id_user))
+        user_folder = create_a_floder(id_user, os.getcwd())
+        header = client_socket.recv(1024)
+        header = utils.data_analysis_2(header)
+        print('file name: ', header[3])
+        file = client_socket.recv(1024)
+        with open(str(user_folder) + header[3], 'wb') as f:
+            while file != '':
                 f.write(file)
-                f.close()
-        else:
-            client_socket.send(user_id)
-        print('\nReceived: ', user_id)
-        client_socket.send(user_id.upper())
-        client_socket.close()
-        print('Client disconnected')
+                file = client_socket.recv(1024)
+            f.close()
+    else:
+        client_socket.send(user_id)
+    print('\nReceived: ', user_id)
+    client_socket.send(user_id.upper())
+    client_socket.close()
+    print('Client disconnected')
