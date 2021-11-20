@@ -33,6 +33,7 @@ def create_a_floder(userid, directory):
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 server.bind(('', int(sys.argv[1])))
 server.listen(0)
 if len(sys.argv) != 2:
@@ -47,7 +48,6 @@ while True:
         user_folder = create_a_floder(id_user, os.getcwd())
         header = client_socket.recv(1024)
         while header != b'enough':
-            print(header.decode('utf-8'))
             header = utils.data_analysis_2(header)
             print('file name: ', header[3])
             file = client_socket.recv(1024)
