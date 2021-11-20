@@ -40,10 +40,13 @@ def send_files(folder, main_path, sock):
         sock.send(str.encode(to_send))
         with open(str(f), 'rb') as g:
             reader = g.read(1024)
-            while reader != '':
+            while reader != b'':
                 sock.send(reader)
                 reader = g.read(1024)
+            sock.send(b'stop')
+            print('stop')
             g.close()
+    sock.send(b'enough')
 
 
 # Initialize all the variable we got as arguments
