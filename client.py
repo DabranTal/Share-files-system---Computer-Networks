@@ -44,7 +44,6 @@ def send_files(folder, main_path, sock):
                 sock.send(reader)
                 reader = g.read(1024)
             sock.send(b'stop')
-            print('stop')
             g.close()
     sock.send(b'enough')
 
@@ -66,6 +65,7 @@ else:
 my_directory = os.listdir(folder_path)
 main_folder = utils.Folder(folder_path)
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 s.connect((ip_server, int(port_server)))
 # Make sure the server know who am i
 s.send(str.encode(str(user_id)))
