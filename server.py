@@ -46,17 +46,24 @@ while True:
         id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
         client_socket.send(str.encode(id_user))
         user_folder = create_a_floder(id_user, os.getcwd())
+        get_id = client_socket.recv(1024)
+        client_socket.send(b'ack')
         header = client_socket.recv(1024)
+        client_socket.send(b'ack')
         while header != b'enough':
             header = utils.data_analysis_2(header)
             print('file name: ', header[3])
             file = client_socket.recv(1024)
+            client_socket.send(b'ack')
             with open(str(user_folder) + header[3], 'wb') as f:
                 while file != b'stop':
                     f.write(file)
                     file = client_socket.recv(1024)
+                    client_socket.send(b'ack')
                 f.close()
+            client_socket.send(b'ack')
             header = client_socket.recv(1024)
+            client_socket.send(b'ack')
             print('OK')
     else:
         client_socket.send(user_id)

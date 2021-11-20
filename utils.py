@@ -2,11 +2,14 @@ import socket
 import sys
 from sys import platform
 import os
-ADD_FOLDER = 0x0001
-ADD_FILE = 0x0010
-UPDATE_FILE = 0x0100
-DELETE_FILE = 0x1000
+CREATE = 1
+UPDATE = 3
+DELETE = 4
+FINISH = 1
+NO_FINISH = 0
 SEGMENT_SIZE = 1024
+INT_IN_BITS = 32
+BITS_ON_BYTE = 8
 
 
 class Folder:
@@ -58,6 +61,53 @@ def data_analysis(data):
         header_data.append(str_data[index: index + len(str_data) - 40 - n])
     return header_data
 
+
+def get_relative_path(full_path, main_folder_path):
+    main_path_len = len(main_folder_path)
+    full_path_len = len(full_path)
+    n = full_path_len - main_path_len
+    if 0 == n:
+        return None
+    relative_array = ''
+    j = 0
+    for i in range(main_path_len, full_path_len):
+        relative_array = relative_array + full_path[i]
+        j = j+1
+    return relative_array
+
+
+def send_files(folder, main_path, sock, user_id):
+    for f in folder.files:
+        relative_path = get_relative_path(f, main_path)
+        if relative_path is None:
+            path_len = 0
+            relative_path = ''
+        else:
+            path_len = len(relative_path)
+        header = relative_path + str(1000-path_len) + str(CREATE) + str(CREATE)
+        sock.send(user_id)
+        ans1 = sock.recv(1024)
+        sock.send(str.encode(header))
+        ans2 = sock.recv(1024)
+        with open(str(f), 'rb') as g:
+            reader = g.read(1024)
+            while reader != b'':
+                sock.send(reader)
+                reader = g.read(1024)
+                ans3 = sock.recv(1024)
+            sock.send(b'stop')
+            g.close()
+    ans4 = sock.recv(1024)
+    sock.send(b'enough')
+
+
+def update_folders(to_change_path, main_path, sock, user_id, action):
+    if CREATE == action:
+        send_files(to_change_path, main_path, sock, user_id)
+    elif DELETE == action:
+        send_files(to_change_path, main_path, sock, user_id)
+    elif UPDATE == action:
+        send_files(to_change_path, main_path, sock, user_id)
         
 
 def is_this_path_exits(path):

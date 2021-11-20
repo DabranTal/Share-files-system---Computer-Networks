@@ -1,51 +1,37 @@
 import socket
 import sys
+import time
 from sys import platform
 import os
 import utils
-ADD_FOLDER = 1
-ADD_FILE = 2
-UPDATE_FILE = 3
-DELETE_FILE = 4
+import watchdog
+from watchdog.observers import Observer
+from watchdog.events import LoggingEventHandler, PatternMatchingEventHandler
+CREATE = 1
+UPDATE = 3
+DELETE = 4
 FINISH = 1
 NO_FINISH = 0
 SEGMENT_SIZE = 1024
 INT_IN_BITS = 32
 BITS_ON_BYTE = 8
 
-
-def get_relative_path(full_path, main_folder_path):
-    main_path_len = len(main_folder_path)
-    full_path_len = len(full_path)
-    n = full_path_len - main_path_len
-    if 0 == n:
-        return None
-    relative_array = ''
-    j = 0
-    for i in range(main_path_len, full_path_len):
-        relative_array = relative_array + full_path[i]
-        j = j+1
-    return relative_array
+action_flag = 1
 
 
-def send_files(folder, main_path, sock):
-    for f in folder.files:
-        relative_path = get_relative_path(f, main_path)
-        if relative_path is None:
-            path_len = 0
-            relative_path = ''
-        else:
-            path_len = len(relative_path)
-        to_send = relative_path + str(1000-path_len) + str(ADD_FOLDER) + str(ADD_FOLDER)
-        sock.send(str.encode(to_send))
-        with open(str(f), 'rb') as g:
-            reader = g.read(1024)
-            while reader != b'':
-                sock.send(reader)
-                reader = g.read(1024)
-            sock.send(b'stop')
-            g.close()
-    sock.send(b'enough')
+def on_created(event):
+    print(f"hey, {event.src_path} has been created!")
+    utils.update_folders(main_folder, event.src_path, s, user_id, CREATE)
+
+
+def on_deleted(event):
+    print(f"what the f**k! Someone deleted {event.src_path}!")
+    utils.update_folders(main_folder, event.src_path, s, user_id, DELETE)
+
+
+def on_modified(event):
+    print(f"hey buddy, {event.src_path} has been modified")
+    utils.update_folders(main_folder, event.src_path, s, user_id, UPDATE)
 
 
 # Initialize all the variable we got as arguments
@@ -62,8 +48,36 @@ if platform == "win32":
     backslash = '\\'
 else:
     backslash = '/'
+
 my_directory = os.listdir(folder_path)
 main_folder = utils.Folder(folder_path)
+utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
+
+
+patterns = ["*"]
+ignore_patterns = None
+ignore_directories = False
+case_sensitive = True
+my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
+
+my_event_handler.on_created = on_created
+my_event_handler.on_deleted = on_deleted
+my_event_handler.on_modified = on_modified
+
+path = "."
+go_recursively = True
+my_observer = Observer()
+my_observer.schedule(my_event_handler, main_folder.path, go_recursively)
+
+my_observer.start()
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    my_observer.stop()
+    my_observer.join()
+
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 s.connect((ip_server, int(port_server)))
@@ -76,10 +90,6 @@ if temp_user_id != user_id:
     user_id = temp_user_id
     # Start sync folders map
     utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
-    send_files(main_folder, main_folder.path, s)
+    utils.send_files(main_folder, main_folder.path, s, user_id)
     temp_user_id = s.recv(1024)
-# TO DO:
-s.send(b'316222512 & 316040898')
-data = s.recv(100)
-print("Server sent: ", data)
 s.close()
