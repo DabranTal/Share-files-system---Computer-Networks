@@ -98,6 +98,7 @@ def send_files(folder, main_path, sock, user_id):
             sock.send(b'stop')
             g.close()
     ans4 = sock.recv(1024)
+    print('enough')
     sock.send(b'enough')
 
 
