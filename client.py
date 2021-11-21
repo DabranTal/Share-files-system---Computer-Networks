@@ -44,16 +44,11 @@ user_id = 0
 if len(sys.argv) == 6:
     user_id = sys.argv[5]
 # Check which platform the user using to define how to apart folders in the files path
-if platform == "win32":
-    backslash = '\\'
-else:
-    backslash = '/'
-
+backslash = utils.get_backslash()
 my_directory = os.listdir(folder_path)
 main_folder = utils.Folder(folder_path)
-utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
 
-
+"""""
 patterns = ["*"]
 ignore_patterns = None
 ignore_directories = False
@@ -76,8 +71,7 @@ try:
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()
-
-
+"""""
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 s.connect((ip_server, int(port_server)))
@@ -89,7 +83,8 @@ if temp_user_id != user_id:
     utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
     user_id = temp_user_id
     # Start sync folders map
-    utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
-    utils.send_files(main_folder, main_folder.path, s, user_id)
+    utils.upload_to_cloud(main_folder, main_folder.path, s, user_id)
+    print('\nenough')
+    s.send(b'enough')
     temp_user_id = s.recv(1024)
 s.close()

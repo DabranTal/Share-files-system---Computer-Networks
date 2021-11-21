@@ -5,6 +5,7 @@ import string
 import sys
 import utils
 import os
+ADD_FOLDER = 5
 
 
 def data_analysis(data):
@@ -26,10 +27,21 @@ def data_analysis(data):
     return header_data
 
 
-def create_a_floder(userid, directory):
-    path = os.path.join(directory, userid)
+def create_a_folder(folder_name, directory):
+    path = os.path.join(directory, folder_name)
     os.mkdir(path)
     return path
+
+
+def upload_files_to_folder(file_name, folder_path, got_from_recv):
+    backslash = utils.get_backslash()
+    with open(folder_path + backslash + file_name, 'wb') as new_file:
+        while got_from_recv != b'stop':
+            new_file.write(got_from_recv)
+            got_from_recv = client_socket.recv(1024)
+            client_socket.send(b'ack')
+        new_file.close()
+        client_socket.send(b'ack')
 
 
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -45,26 +57,29 @@ while True:
     if user_id.decode('utf-8') == '0':
         id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
         client_socket.send(str.encode(id_user))
-        user_folder = create_a_floder(id_user, os.getcwd())
-        get_id = client_socket.recv(1024)
-        client_socket.send(b'ack')
+        # Create main user folder
+        user_folder_path = create_a_folder(id_user, os.getcwd())
         header = client_socket.recv(1024)
         client_socket.send(b'ack')
         while header != b'enough':
             header = utils.data_analysis_2(header)
-            print('file name: ', header[3])
-            file = client_socket.recv(1024)
-            client_socket.send(b'ack')
-            with open(str(user_folder) + header[3], 'wb') as f:
-                while file != b'stop':
-                    f.write(file)
-                    file = client_socket.recv(1024)
+            if ADD_FOLDER == int(header[0]):
+                while b'stop' != header:
+                    print('i have got here\n',header,'\n')
+                    create_a_folder(header[3], user_folder_path)
+                    header = client_socket.recv(1024)
                     client_socket.send(b'ack')
-                f.close()
-            client_socket.send(b'ack')
+                    if b'stop' != header:
+                        header = utils.data_analysis_2(header)
+            else:
+                client_socket.send(b'ack')
+                print('i have got here\n',header,'\n')
+                file = client_socket.recv(1024)
+                client_socket.send(b'ack')
+                upload_files_to_folder(header[3], user_folder_path, file)
             header = client_socket.recv(1024)
             client_socket.send(b'ack')
-            print('OK')
+
     else:
         client_socket.send(user_id)
     print('\nReceived: ', user_id)
