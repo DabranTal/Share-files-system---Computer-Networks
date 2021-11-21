@@ -34,14 +34,6 @@ def split_operations(operations):
     return operation_list
 
 
-def find_keys(data_dic, id):
-    key_list = []
-    for key in data_dic:
-        key_list.append(key)
-    for j in range(len(key_list)):
-        if key_list[j] == id:
-            return True
-    return False
 
 
 def data_structure(data_dic, id, port, header):
