@@ -72,6 +72,7 @@ except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()
 """""
+
 s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 s.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 s.connect((ip_server, int(port_server)))
