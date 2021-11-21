@@ -72,35 +72,30 @@ def get_relative_path(full_path, main_folder_path):
     return relative_array
 
 
+def create_sub_folders(folder_path, main_path, sock, user_id):
+    relative_path = get_relative_path(folder_path, main_path)
+    if relative_path is None:
+        path_len = 0
+        relative_path = ''
+    else:
+        path_len = len(relative_path)
+    header = relative_path + str(1000 - path_len) + str(CREATE) + str(ADD_FOLDER)
+    sock.send(str.encode(header))
+    get_ack = sock.recv(1024)
+
+
 def upload_to_cloud(folder, main_path, sock, user_id):
-    create_sub_folders(folder, main_path, sock, user_id)
-    create_files(folder, main_path, sock, user_id)
+    # create_sub_folders(folder, main_path, sock, user_id)
+    for fold in folder.sub_folders:
+        create_sub_folders(fold.path, main_path, sock, user_id)
+    for file in folder.files:
+        create_file(file, main_path, sock, user_id)
     for fold in folder.sub_folders:
         upload_to_cloud(fold, main_path, sock, user_id)
 
 
-def create_sub_folders(folder, main_path, sock, user_id):
-    for sf in folder.sub_folders:
-        relative_path = get_relative_path(sf.path, main_path)
-        if relative_path is None:
-            path_len = 0
-            relative_path = ''
-        else:
-            path_len = len(relative_path)
-        header = relative_path + str(1000 - path_len) + str(CREATE) + str(ADD_FOLDER)
-        sock.send(str.encode(header))
-        ans1 = sock.recv(1024)
-    if len(folder.sub_folders) > 0:
-        sock.send(b'stop')
-        ans2 = sock.recv(1024)
-    x = 5
-
-
-def create_files(folder, main_path, sock, user_id):
-    flag = 0
-    for f in folder.files:
-        flag = 1
-        relative_path = get_relative_path(f, main_path)
+def create_file(file, main_path, sock, user_id):
+        relative_path = get_relative_path(file, main_path)
         if relative_path is None:
             path_len = 0
             relative_path = ''
@@ -109,26 +104,25 @@ def create_files(folder, main_path, sock, user_id):
         header = relative_path + str(1000 - path_len) + str(CREATE) + str(CREATE)
         sock.send(str.encode(header))
         ans1 = sock.recv(1024)
-        with open(str(f), 'rb') as g:
+        with open(file, 'rb') as g:
             reader = g.read(1024)
             while reader != b'':
                 sock.send(reader)
-                reader = g.read(1024)
                 ans2 = sock.recv(1024)
+                reader = g.read(1024)
             sock.send(b'stop')
-            g.close()
-    if 1 == flag:
         ans3 = sock.recv(1024)
 
 
-
+"""
 def update_folders(to_change_path, main_path, sock, user_id, action):
     if CREATE == action:
-        create_files(to_change_path, main_path, sock, user_id)
+        create_file(to_change_path, main_path, sock, user_id)
     elif DELETE == action:
         create_files(to_change_path, main_path, sock, user_id)
     elif UPDATE == action:
         create_files(to_change_path, main_path, sock, user_id)
+"""
 
 
 def is_this_path_exits(path):

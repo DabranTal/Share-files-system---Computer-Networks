@@ -1,4 +1,3 @@
-
 import random
 import socket
 import string
@@ -6,25 +5,6 @@ import sys
 import utils
 import os
 ADD_FOLDER = 5
-
-
-def data_analysis(data):
-    str_data = str(data)
-    header_data = []
-    for index in range(len(str_data) - 4, len(str_data), 4):
-        header_data.append(str_data[index: index + 4])
-    for index in range(len(str_data) - 5, len(str_data) - 4, 1):
-        header_data.append(str_data[index: index + 1])
-    for index in range(len(str_data) - 8, len(str_data) - 5, 3):
-        header_data.append(str_data[index: index + 3])
-    for index in range(len(str_data) - 40, len(str_data) - 8, 32):
-        header_data.append(str_data[index: index + 32])
-    n = int(header_data[3], 2)
-    for index in range(len(str_data) - 40 - n, len(str_data) - 40, n):
-        header_data.append(str_data[index: index + n])
-    for index in range(0, len(str_data) - 40 - n, len(str_data) - 40 - n):
-        header_data.append(str_data[index: index + len(str_data) - 40 - n])
-    return header_data
 
 
 def create_a_folder(folder_name, directory):
@@ -53,6 +33,7 @@ if len(sys.argv) != 2:
 while True:
     client_socket, client_address = server.accept()
     print('Connection from: ', client_address)
+    backslash = utils.get_backslash()
     user_id = client_socket.recv(1024)
     if user_id.decode('utf-8') == '0':
         id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
@@ -60,29 +41,23 @@ while True:
         # Create main user folder
         user_folder_path = create_a_folder(id_user, os.getcwd())
         header = client_socket.recv(1024)
-        client_socket.send(b'ack')
         while header != b'enough':
             header = utils.data_analysis_2(header)
             if ADD_FOLDER == int(header[0]):
-                while b'stop' != header:
-                    print('i have got here\n',header,'\n')
-                    create_a_folder(header[3], user_folder_path)
-                    header = client_socket.recv(1024)
-                    client_socket.send(b'ack')
-                    if b'stop' != header:
-                        header = utils.data_analysis_2(header)
+                client_socket.send(b'ack')
+                create_a_folder(header[3], user_folder_path)
             else:
-                client_socket.send(b'ack')
-                print('i have got here\n',header,'\n')
-                file = client_socket.recv(1024)
-                client_socket.send(b'ack')
-                upload_files_to_folder(header[3], user_folder_path, file)
+                file = None
+                with open(user_folder_path + backslash + header[3], 'wb') as new_file:
+                    while file != b'stop':
+                        client_socket.send(b'ack')
+                        file = client_socket.recv(1024)
+                        if b'stop' != file:
+                            new_file.write(file)
+                    new_file.close()
+                    client_socket.send(b'ack')
             header = client_socket.recv(1024)
-            client_socket.send(b'ack')
-
     else:
         client_socket.send(user_id)
-    print('\nReceived: ', user_id)
-    client_socket.send(user_id.upper())
     client_socket.close()
     print('Client disconnected')
