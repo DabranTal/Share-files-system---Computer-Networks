@@ -108,23 +108,23 @@ def copy_data(src_map, src_path, dst_socket, user_id):
 
 
 def create_file(file, main_path, sock, user_id):
-        relative_path = get_relative_path(file, main_path)
-        if relative_path is None:
-            path_len = 0
-            relative_path = ''
-        else:
-            path_len = len(relative_path)
-        header = relative_path + str(1000 - path_len) + str(CREATE) + str(CREATE)
-        sock.send(str.encode(header))
-        ans1 = sock.recv(1024)
-        with open(file, 'rb') as g:
+    relative_path = get_relative_path(file, main_path)
+    if relative_path is None:
+        path_len = 0
+        relative_path = ''
+    else:
+        path_len = len(relative_path)
+    header = relative_path + str(1000 - path_len) + str(CREATE) + str(CREATE)
+    sock.send(str.encode(header))
+    ans1 = sock.recv(1024)
+    with open(file, 'rb') as g:
+        reader = g.read(1024)
+        while reader != b'':
+            sock.send(reader)
+            ans2 = sock.recv(1024)
             reader = g.read(1024)
-            while reader != b'':
-                sock.send(reader)
-                ans2 = sock.recv(1024)
-                reader = g.read(1024)
-            sock.send(b'stop')
-        ans3 = sock.recv(1024)
+        sock.send(b'stop')
+    ans3 = sock.recv(1024)
 
 
 def create_a_folder(folder_name, directory):

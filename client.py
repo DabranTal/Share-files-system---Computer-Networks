@@ -17,18 +17,37 @@ INT_IN_BITS = 32
 BITS_ON_BYTE = 8
 
 
+
 def on_created(event):
     print(f"hey, {event.src_path} has been created!")
-
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((ip_server, int(port_server)))
+    server_socket.send(b'yes')
+    ack1 = server_socket.recv(1024)
+    relative = utils.get_relative_path(event.src_path, main_folder.path)
+    server_socket.send((relative + str(CREATE)).encode())
+    ack2 = server_socket.recv(1024)
+    utils.create_file(event.src_path, main_folder.path, server_socket, user_id)
+    server_socket.send(b'enough')
+    ack3 = server_socket.recv(1024)
+    server_socket.close()
 
 
 def on_deleted(event):
     print(f"what the f**k! Someone deleted {event.src_path}!")
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    server_socket.connect((ip_server, int(port_server)))
+    server_socket.send(b'yes')
+    ack1 = server_socket.recv(1024)
+    relative = utils.get_relative_path(event.src_path, main_folder.path)
+    server_socket.send((relative + str(DELETE)).encode())
+    ack2 = server_socket.recv(1024)
+    server_socket.close()
 
 
+def on_moved(event):
+    print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
 
-def on_modified(event):
-    print(f"hey buddy, {event.src_path} has been modified")
 
 
 
@@ -52,20 +71,14 @@ case_sensitive = True
 my_event_handler = PatternMatchingEventHandler(patterns, ignore_patterns, ignore_directories, case_sensitive)
 my_event_handler.on_created = on_created
 my_event_handler.on_deleted = on_deleted
-my_event_handler.on_modified = on_modified
+my_event_handler.on_moved = on_moved
 path = "."
 go_recursively = True
 my_observer = Observer()
 my_observer.schedule(my_event_handler, main_folder.path, go_recursively)
 my_observer.start()
-try:
-    while True:
-        time.sleep(1)
-except KeyboardInterrupt:
-    my_observer.stop()
-    my_observer.join()
+
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server_socket.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 server_socket.connect((ip_server, int(port_server)))
 # Make sure the server know who am i
 server_socket.send(str.encode(str(user_id)))
@@ -83,5 +96,10 @@ if temp_user_id != user_id.encode():
     server_socket.send(b'enough')
 else:
     utils.get_files(main_folder.path, server_socket)
-    x = 7
 server_socket.close()
+try:
+    while True:
+        time.sleep(1)
+except KeyboardInterrupt:
+    my_observer.stop()
+    my_observer.join()

@@ -5,9 +5,21 @@ import sys
 import utils
 import os
 ADD_FOLDER = 5
+CREATE = 1
+UPDATE = 3
+DELETE = 4
+
+
+def run_operations(user_id, client_address, client_socket):
+    operations = split_operations(data_dic[user_id][client_address].actions)
+    for op in operations:
+        if op [1] is DELETE:
+            os.remove(user_folder_path + op[0])
+        elif op[1] is CREATE:
+            utils.create_file(op[0], user_folder_path, client_socket, user_id)
+
 
 def upload_files_to_folder(file_name, folder_path, got_from_recv):
-    backslash = utils.get_backslash()
     with open(folder_path + backslash + file_name, 'wb') as new_file:
         while got_from_recv != b'stop':
             new_file.write(got_from_recv)
@@ -15,6 +27,13 @@ def upload_files_to_folder(file_name, folder_path, got_from_recv):
             client_socket.send(b'ack')
         new_file.close()
         client_socket.send(b'ack')
+
+
+def update_actions(user_id, client_address, header):
+    header = utils.data_analysis(header)
+    for address in data_dic[user_id]:
+        if address != client_address:
+            data_dic[user_id][address].actions = data_dic[user_id][address].actions + '|' + header[3] + ',' + header[0]
 
 
 def split_operations(operations):
@@ -27,13 +46,7 @@ def split_operations(operations):
     return operation_list
 
 
-def update_user_in_data_structure(user_dic, header):
-    header = utils.data_analysis(header)
-    user_dic.actions = user_dic.actions + '|' + header[3] + ',' + header[0]
-
-
 def update_user_in_data_structure(data_dic, user_id, user_dictionary):
-    # Case the
     if user_id not in data_dic:
         data_dic[user_id] = {user_dictionary.address: user_dictionary}
         must_update = utils.User_Dic(0)
@@ -87,6 +100,26 @@ while True:
             utils.copy_data(data_dic[user_id][0].folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
             data_dic[user_id] = {client_address: data_dic[user_id][0]}
+        else:
+            run_operations(user_id, client_address, client_socket)
+            there_is_a_changes = client_socket.recv(1024)
+            if there_is_a_changes == b'yes':
+                client_socket.send(b'ack')
+                actions = client_socket.recv(1024)
+                header = utils.data_analysis(actions)
+                client_socket.send(b'ack')
+                if header[0] == CREATE:
+                    header[3], extension = os.path.splitext(header[3])
+                    if '' == extension:
+                        print(header, '\n')
+                        new_folder = utils.create_a_folder(header[3], os.getcwd())
+                    else:
+                        utils.get_files(user_folder_path, client_socket)
+                elif header[0] == DELETE:
+                    os.remove(user_folder_path + header[3])
+                client_socket.send(b'ack')
+                update_actions(user_id, client_address, actions)
+
 
     client_socket.close()
     print('Client disconnected')
