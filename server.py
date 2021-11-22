@@ -59,9 +59,8 @@ def update_user_in_data_structure(data_dic, user_id, user_dictionary):
             data_dic[user_id] = {user_dictionary.address: user_dictionary}
 
 
-data_dic = {}
+data_dic = {b'': []}
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-server.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
 server.bind(('', int(sys.argv[1])))
 server.listen(0)
 if len(sys.argv) != 2:
@@ -78,7 +77,6 @@ while True:
         id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         client_socket.send(str.encode(id_user))
         ack = client_socket.recv(1024)
-        print(ack, '\n')
         # Create main user folder
         user_folder_path = utils.create_a_folder(id_user, os.getcwd())
         # Begin to get files to upload the server cloud
@@ -92,18 +90,12 @@ while True:
     else:
         client_socket.send(user_id)
         ack = client_socket.recv(1024)
-        print(ack, '\n')
         user_id = user_id.decode('utf-8')
         user_folder_path = os.path.join(os.getcwd(), user_id)
-        if client_address not in data_dic[user_id]:
-            # copy the user files to the new computer
-            utils.copy_data(data_dic[user_id][0].folders_map, user_folder_path, client_socket, user_id)
-            client_socket.send(b'enough')
-            data_dic[user_id] = {client_address: data_dic[user_id][0]}
-        else:
+        if client_address in data_dic.get(user_id):
             run_operations(user_id, client_address, client_socket)
             there_is_a_changes = client_socket.recv(1024)
-            if there_is_a_changes == b'yes':
+            if there_is_a_changes == b'true':
                 client_socket.send(b'ack')
                 actions = client_socket.recv(1024)
                 header = utils.data_analysis(actions)
@@ -111,7 +103,6 @@ while True:
                 if header[0] == CREATE:
                     header[3], extension = os.path.splitext(header[3])
                     if '' == extension:
-                        print(header, '\n')
                         new_folder = utils.create_a_folder(header[3], os.getcwd())
                     else:
                         utils.get_files(user_folder_path, client_socket)
@@ -119,6 +110,12 @@ while True:
                     os.remove(user_folder_path + header[3])
                 client_socket.send(b'ack')
                 update_actions(user_id, client_address, actions)
+        else:
+            # copy the user files to the new computer
+            utils.copy_data(data_dic.get(user_id).get(0).folders_map, user_folder_path, client_socket, user_id)
+            client_socket.send(b'enough')
+            data_dic[user_id] = {client_address: data_dic.get(user_id).get(0)}
+
 
 
     client_socket.close()

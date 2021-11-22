@@ -20,12 +20,11 @@ BITS_ON_BYTE = 8
 
 def on_created(event):
     print(f"hey, {event.src_path} has been created!")
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.connect((ip_server, int(port_server)))
-    server_socket.send(b'yes')
+    server_socket, temp_user_id = start_connection(user_id, my_address)
+    server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
-    server_socket.send((relative + str(CREATE)).encode())
+    server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
     ack2 = server_socket.recv(1024)
     utils.create_file(event.src_path, main_folder.path, server_socket, user_id)
     server_socket.send(b'enough')
@@ -35,12 +34,11 @@ def on_created(event):
 
 def on_deleted(event):
     print(f"what the f**k! Someone deleted {event.src_path}!")
-    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    server_socket.connect((ip_server, int(port_server)))
-    server_socket.send(b'yes')
+    server_socket, temp_user_id = start_connection(user_id, my_address)
+    server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
-    server_socket.send((relative + str(DELETE)).encode())
+    server_socket.send((relative + str(1000 - len(relative)) + '0' + str(DELETE)).encode())
     ack2 = server_socket.recv(1024)
     server_socket.close()
 
@@ -48,7 +46,18 @@ def on_deleted(event):
 def on_moved(event):
     print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
 
-
+def start_connection(user_id, address):
+    server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if 0 != address:
+        time.sleep(10)
+        server_socket.bind(my_address)
+        # It doesnt work so maybe we should send the adress in function or find a better way to save our port
+    server_socket.connect((ip_server, int(port_server)))
+    # Make sure the server know who am i
+    server_socket.send(user_id)
+    temp_user_id = server_socket.recv(1024)
+    server_socket.send(b'ack')
+    return server_socket, temp_user_id
 
 
 # Initialize all the variable we got as arguments
@@ -64,6 +73,7 @@ if len(sys.argv) == 6:
 backslash = utils.get_backslash()
 my_directory = os.listdir(folder_path)
 main_folder = utils.Folder(folder_path)
+
 patterns = ["*"]
 ignore_patterns = None
 ignore_directories = False
@@ -77,17 +87,19 @@ go_recursively = True
 my_observer = Observer()
 my_observer.schedule(my_event_handler, main_folder.path, go_recursively)
 my_observer.start()
-
+"""
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.connect((ip_server, int(port_server)))
 # Make sure the server know who am i
-server_socket.send(str.encode(str(user_id)))
+server_socket.send(user_id.encode())
 temp_user_id = server_socket.recv(1024)
-server_socket.send(b'ack')
-print(temp_user_id, '\n')
+server_socket.send(b'ack')"""
+
+server_socket, temp_user_id = start_connection(user_id.encode(), 0)
+my_address = server_socket.getsockname()
+
 # If the ID doesnt exist get new id and build folders map
 if temp_user_id != user_id.encode():
-    print(temp_user_id, '\n', user_id.encode())
     utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
     user_id = temp_user_id
     # Start sync folders map
@@ -97,9 +109,12 @@ if temp_user_id != user_id.encode():
 else:
     utils.get_files(main_folder.path, server_socket)
 server_socket.close()
+time.sleep(5)
+
 try:
     while True:
         time.sleep(1)
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()
+

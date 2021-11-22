@@ -36,6 +36,7 @@ class User_Dic:
         self.actions = ''
 
 
+
 def data_analysis(data):
     if b'stop' == data:
         return
