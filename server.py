@@ -6,13 +6,6 @@ import utils
 import os
 ADD_FOLDER = 5
 
-
-def create_a_folder(folder_name, directory):
-    path = os.path.join(directory, folder_name)
-    os.mkdir(path)
-    return path
-
-
 def upload_files_to_folder(file_name, folder_path, got_from_recv):
     backslash = utils.get_backslash()
     with open(folder_path + backslash + file_name, 'wb') as new_file:
@@ -34,31 +27,23 @@ def split_operations(operations):
     return operation_list
 
 
+def update_user_in_data_structure(user_dic, header):
+    header = utils.data_analysis(header)
+    user_dic.actions = user_dic.actions + '|' + header[3] + ',' + header[0]
 
 
-def data_structure(data_dic, id, port, header):
-    header_data = utils.data_analysis_2(header)
-    if id in data_dic:
-        if port in data_dic[id]:
-            to_do = data_dic[id][port]
-            data_dic[id][port] = ''
-            for i in data_dic[id]:
-                if i == port:
-                    continue
-                data_dic[id][i] = data_dic[id][i] + '|' + header_data[3] + ',' + header_data[0]
-        else:
-            to_do = data_dic[id][0]
-            for i in data_dic[id]:
-                if i == port:
-                    continue
-                data_dic[id][i] = data_dic[id][i] + '|' + header_data[3] + ',' + header_data[0]
-            data_dic[id][port] = ''
+def update_user_in_data_structure(data_dic, user_id, user_dictionary):
+    # Case the
+    if user_id not in data_dic:
+        data_dic[user_id] = {user_dictionary.address: user_dictionary}
+        must_update = utils.User_Dic(0)
+        must_update.folders_map = user_dictionary.folders_map
+        data_dic[user_id][0] = must_update
     else:
-        data_dic[id] = {port: header_data[3] + ',' + header_data[0]}
-        data_dic[id][0] = header_data[3] + ',' + header_data[0]
-        to_do = header_data[3] + ',' + header_data[0]
-        data_dic[id][port] = ''
-    return data_dic, to_do
+        if user_dictionary.address in data_dic[user_id]:
+            data_dic[user_id][user_dictionary.address] = user_dictionary
+        else:
+            data_dic[user_id] = {user_dictionary.address: user_dictionary}
 
 
 data_dic = {}
@@ -70,35 +55,38 @@ if len(sys.argv) != 2:
     exit()
 while True:
     client_socket, client_address = server.accept()
+    user_dictionary = utils.User_Dic(client_address)
     print('Connection from: ', client_address)
     backslash = utils.get_backslash()
+    # Client sent the Id
     user_id = client_socket.recv(1024)
+    # Case the user is new
     if user_id.decode('utf-8') == '0':
-        id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(128))
+        id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         client_socket.send(str.encode(id_user))
+        ack = client_socket.recv(1024)
+        print(ack, '\n')
         # Create main user folder
-        user_folder_path = create_a_folder(id_user, os.getcwd())
-        header = client_socket.recv(1024)
-        data_dic, to_do = data_structure(data_dic, id_user, int(sys.argv[1]), header)
-        while header != b'enough':
-            header = utils.data_analysis_2(header)
-            if ADD_FOLDER == int(header[0]):
-                client_socket.send(b'ack')
-                create_a_folder(header[3], user_folder_path)
-            else:
-                file = None
-                with open(user_folder_path + backslash + header[3], 'wb') as new_file:
-                    while file != b'stop':
-                        client_socket.send(b'ack')
-                        file = client_socket.recv(1024)
-                        if b'stop' != file:
-                            new_file.write(file)
-                    new_file.close()
-                    client_socket.send(b'ack')
-            header = client_socket.recv(1024)
-            if header != b'enough':
-                data_dic, to_do = data_structure(data_dic, id_user, int(sys.argv[1]), header)
+        user_folder_path = utils.create_a_folder(id_user, os.getcwd())
+        # Begin to get files to upload the server cloud
+        utils.get_files(user_folder_path, client_socket)
+        # Add new user to the server data structure
+        user_dictionary.folders_map = utils.Folder(user_folder_path)
+        folder_directory = os.listdir(user_folder_path)
+        utils.build_folders_map(user_dictionary.folders_map, folder_directory, backslash, user_folder_path)
+        update_user_in_data_structure(data_dic, id_user, user_dictionary)
+    # Case the user is already exist
     else:
         client_socket.send(user_id)
+        ack = client_socket.recv(1024)
+        print(ack, '\n')
+        user_id = user_id.decode('utf-8')
+        user_folder_path = os.path.join(os.getcwd(), user_id)
+        if client_address not in data_dic[user_id]:
+            # copy the user files to the new computer
+            utils.copy_data(data_dic[user_id][0].folders_map, user_folder_path, client_socket, user_id)
+            client_socket.send(b'enough')
+            data_dic[user_id] = {client_address: data_dic[user_id][0]}
+
     client_socket.close()
     print('Client disconnected')

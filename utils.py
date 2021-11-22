@@ -25,7 +25,18 @@ class Folder:
         self.files = []
 
 
-def data_analysis_2(data):
+class User_Dic:
+    address = ''
+    folders_map = None
+    actions = ''
+
+    def __init__(self, user_address):
+        self.address = user_address
+        self.folders_map = None
+        self.actions = ''
+
+
+def data_analysis(data):
     if b'stop' == data:
         return
     str_data = data.decode('utf-8')
@@ -46,7 +57,6 @@ def data_analysis_2(data):
     backslash = get_backslash()
     if header_data[3][0] == backslash:
         header_data[3] = header_data[3][1:]
-        print('\n', header_data[3], '\n')
     # header_data[3] = header_data[3].replace(backslash, '')
     return header_data
 
@@ -85,13 +95,16 @@ def create_sub_folders(folder_path, main_path, sock, user_id):
 
 
 def upload_to_cloud(folder, main_path, sock, user_id):
-    # create_sub_folders(folder, main_path, sock, user_id)
     for fold in folder.sub_folders:
         create_sub_folders(fold.path, main_path, sock, user_id)
     for file in folder.files:
         create_file(file, main_path, sock, user_id)
     for fold in folder.sub_folders:
         upload_to_cloud(fold, main_path, sock, user_id)
+
+
+def copy_data(src_map, src_path, dst_socket, user_id):
+    upload_to_cloud(src_map, src_path, dst_socket, user_id)
 
 
 def create_file(file, main_path, sock, user_id):
@@ -113,6 +126,32 @@ def create_file(file, main_path, sock, user_id):
             sock.send(b'stop')
         ans3 = sock.recv(1024)
 
+
+def create_a_folder(folder_name, directory):
+    path = os.path.join(directory, folder_name)
+    os.mkdir(path)
+    return path
+
+
+def get_files(user_folder_path, sock):
+    backslash = get_backslash()
+    header = sock.recv(1024)
+    while header != b'enough':
+        header = data_analysis(header)
+        if ADD_FOLDER == int(header[0]):
+            sock.send(b'ack')
+            create_a_folder(header[3], user_folder_path)
+        else:
+            file = None
+            with open(user_folder_path + backslash + header[3], 'wb') as new_file:
+                while file != b'stop':
+                    sock.send(b'ack')
+                    file = sock.recv(1024)
+                    if b'stop' != file:
+                        new_file.write(file)
+                new_file.close()
+                sock.send(b'ack')
+        header = sock.recv(1024)
 
 """
 def update_folders(to_change_path, main_path, sock, user_id, action):
