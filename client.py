@@ -20,7 +20,7 @@ BITS_ON_BYTE = 8
 
 def on_created(event):
     print(f"hey, {event.src_path} has been created!")
-    server_socket, temp_user_id = start_connection(user_id, my_address)
+    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id)
     server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
@@ -34,7 +34,7 @@ def on_created(event):
 
 def on_deleted(event):
     print(f"what the f**k! Someone deleted {event.src_path}!")
-    server_socket, temp_user_id = start_connection(user_id, my_address)
+    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id)
     server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
@@ -46,18 +46,17 @@ def on_deleted(event):
 def on_moved(event):
     print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
 
-def start_connection(user_id, address):
+
+def start_connection(user_id, comp_id):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    if 0 != address:
-        time.sleep(10)
-        server_socket.bind(my_address)
-        # It doesnt work so maybe we should send the adress in function or find a better way to save our port
     server_socket.connect((ip_server, int(port_server)))
     # Make sure the server know who am i
     server_socket.send(user_id)
     temp_user_id = server_socket.recv(1024)
-    server_socket.send(b'ack')
-    return server_socket, temp_user_id
+    server_socket.send(comp_id)
+    temp_comp_id = server_socket.recv(1024)
+    # server_socket.send(b'ack')
+    return server_socket, temp_user_id, temp_comp_id
 
 
 # Initialize all the variable we got as arguments
@@ -67,6 +66,7 @@ folder_path = sys.argv[3]
 time_temp = sys.argv[4]
 # Set default id for case the is isn't define by an argument
 user_id = '0'
+comp_id = b'0'
 if len(sys.argv) == 6:
     user_id = sys.argv[5]
 # Check which platform the user using to define how to apart folders in the files path
@@ -95,9 +95,7 @@ server_socket.send(user_id.encode())
 temp_user_id = server_socket.recv(1024)
 server_socket.send(b'ack')"""
 
-server_socket, temp_user_id = start_connection(user_id.encode(), 0)
-my_address = server_socket.getsockname()
-
+server_socket, temp_user_id, comp_id = start_connection(user_id.encode(), comp_id)
 # If the ID doesnt exist get new id and build folders map
 if temp_user_id != user_id.encode():
     utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
@@ -109,11 +107,10 @@ if temp_user_id != user_id.encode():
 else:
     utils.get_files(main_folder.path, server_socket)
 server_socket.close()
-time.sleep(5)
 
 try:
     while True:
-        time.sleep(1)
+        time.sleep(int(time_temp))
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()

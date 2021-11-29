@@ -26,12 +26,12 @@ class Folder:
 
 
 class User_Dic:
-    address = ''
+    comp_id = ''
     folders_map = None
     actions = ''
 
-    def __init__(self, user_address):
-        self.address = user_address
+    def __init__(self, user_comp):
+        self.comp_id = user_comp
         self.folders_map = None
         self.actions = ''
 

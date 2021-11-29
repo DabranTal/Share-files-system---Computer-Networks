@@ -5,13 +5,13 @@ import sys
 import utils
 import os
 ADD_FOLDER = 5
-CREATE = 1
-UPDATE = 3
-DELETE = 4
+CREATE = '1'
+UPDATE = '3'
+DELETE = '4'
 
 
-def run_operations(user_id, client_address, client_socket):
-    operations = split_operations(data_dic[user_id][client_address].actions)
+def run_operations(user_id, comp_user, client_socket):
+    operations = split_operations(data_dic[user_id][comp_user].actions)
     for op in operations:
         if op [1] is DELETE:
             os.remove(user_folder_path + op[0])
@@ -29,11 +29,11 @@ def upload_files_to_folder(file_name, folder_path, got_from_recv):
         client_socket.send(b'ack')
 
 
-def update_actions(user_id, client_address, header):
+def update_actions(user_id, comp_user, header):
     header = utils.data_analysis(header)
-    for address in data_dic[user_id]:
-        if address != client_address:
-            data_dic[user_id][address].actions = data_dic[user_id][address].actions + '|' + header[3] + ',' + header[0]
+    for comp in data_dic[user_id]:
+        if comp != comp_user:
+            data_dic[user_id][comp].actions = data_dic[user_id][comp].actions + '|' + header[3] + ',' + header[0]
 
 
 def split_operations(operations):
@@ -48,17 +48,17 @@ def split_operations(operations):
 
 def update_user_in_data_structure(data_dic, user_id, user_dictionary):
     if user_id not in data_dic:
-        data_dic[user_id] = {user_dictionary.address: user_dictionary}
+        data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
         must_update = utils.User_Dic(0)
         must_update.folders_map = user_dictionary.folders_map
         data_dic[user_id][0] = must_update
     else:
-        if user_dictionary.address in data_dic[user_id]:
-            data_dic[user_id][user_dictionary.address] = user_dictionary
+        if user_dictionary.comp_id in data_dic[user_id]:
+            data_dic[user_id][user_dictionary.comp_id] = user_dictionary
         else:
-            data_dic[user_id] = {user_dictionary.address: user_dictionary}
+            data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
 
-
+# create user dictionary
 data_dic = {b'': []}
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('', int(sys.argv[1])))
@@ -67,7 +67,6 @@ if len(sys.argv) != 2:
     exit()
 while True:
     client_socket, client_address = server.accept()
-    user_dictionary = utils.User_Dic(client_address)
     print('Connection from: ', client_address)
     backslash = utils.get_backslash()
     # Client sent the Id
@@ -76,7 +75,11 @@ while True:
     if user_id.decode('utf-8') == '0':
         id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         client_socket.send(str.encode(id_user))
-        ack = client_socket.recv(1024)
+        comp_user = client_socket.recv(1024)
+        comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+        client_socket.send(str.encode(comp_user))
+        # ack = client_socket.recv(1024)
+        user_dictionary = utils.User_Dic(comp_user)
         # Create main user folder
         user_folder_path = utils.create_a_folder(id_user, os.getcwd())
         # Begin to get files to upload the server cloud
@@ -89,11 +92,13 @@ while True:
     # Case the user is already exist
     else:
         client_socket.send(user_id)
-        ack = client_socket.recv(1024)
+        comp_user = client_socket.recv(1024)
+        client_socket.send(comp_user)
+        comp_user = comp_user.decode('utf-8')
         user_id = user_id.decode('utf-8')
         user_folder_path = os.path.join(os.getcwd(), user_id)
-        if client_address in data_dic.get(user_id):
-            run_operations(user_id, client_address, client_socket)
+        if comp_user in data_dic.get(user_id):
+            run_operations(user_id, comp_user, client_socket)
             there_is_a_changes = client_socket.recv(1024)
             if there_is_a_changes == b'true':
                 client_socket.send(b'ack')
@@ -107,14 +112,18 @@ while True:
                     else:
                         utils.get_files(user_folder_path, client_socket)
                 elif header[0] == DELETE:
-                    os.remove(user_folder_path + header[3])
+                    os.unlink(user_folder_path + backslash + header[3])
                 client_socket.send(b'ack')
-                update_actions(user_id, client_address, actions)
+                update_actions(user_id, comp_user, actions)
         else:
             # copy the user files to the new computer
+            comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+            client_socket.send(str.encode(comp_user))
+            ack = client_socket.recv(1024)
+            user_dictionary = utils.User_Dic(comp_user)
             utils.copy_data(data_dic.get(user_id).get(0).folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
-            data_dic[user_id] = {client_address: data_dic.get(user_id).get(0)}
+            data_dic[user_id] = {comp_user: data_dic.get(user_id).get(0)}
 
 
 
