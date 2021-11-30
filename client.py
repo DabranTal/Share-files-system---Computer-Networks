@@ -20,13 +20,15 @@ BITS_ON_BYTE = 8
 
 def on_created(event):
     print(f"hey, {event.src_path} has been created!")
-    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id)
+    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
+    ack = server_socket.recv(1024)
     server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
     server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
     ack2 = server_socket.recv(1024)
-    utils.create_file(event.src_path, main_folder.path, server_socket, user_id)
+    if os.path.isfile(event.src_path):
+        utils.create_file(event.src_path, main_folder.path, server_socket, user_id)
     server_socket.send(b'enough')
     ack3 = server_socket.recv(1024)
     server_socket.close()
@@ -34,7 +36,7 @@ def on_created(event):
 
 def on_deleted(event):
     print(f"what the f**k! Someone deleted {event.src_path}!")
-    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id)
+    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
     server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
@@ -47,7 +49,7 @@ def on_moved(event):
     print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
 
 
-def start_connection(user_id, comp_id):
+def start_connection(user_id, comp_id, folder_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_server, int(port_server)))
     # Make sure the server know who am i
@@ -55,7 +57,7 @@ def start_connection(user_id, comp_id):
     temp_user_id = server_socket.recv(1024)
     server_socket.send(comp_id)
     temp_comp_id = server_socket.recv(1024)
-    # server_socket.send(b'ack')
+    server_socket.send(str.encode(folder_path))
     return server_socket, temp_user_id, temp_comp_id
 
 
@@ -95,7 +97,7 @@ server_socket.send(user_id.encode())
 temp_user_id = server_socket.recv(1024)
 server_socket.send(b'ack')"""
 
-server_socket, temp_user_id, comp_id = start_connection(user_id.encode(), comp_id)
+server_socket, temp_user_id, comp_id = start_connection(user_id.encode(), comp_id, folder_path)
 # If the ID doesnt exist get new id and build folders map
 if temp_user_id != user_id.encode():
     utils.build_folders_map(main_folder, my_directory, backslash, folder_path)

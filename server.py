@@ -78,7 +78,8 @@ while True:
         comp_user = client_socket.recv(1024)
         comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
         client_socket.send(str.encode(comp_user))
-        # ack = client_socket.recv(1024)
+        client_path = client_socket.recv(1024)
+        client_path = client_path.decode('utf-8')
         user_dictionary = utils.User_Dic(comp_user)
         # Create main user folder
         user_folder_path = utils.create_a_folder(id_user, os.getcwd())
@@ -94,6 +95,9 @@ while True:
         client_socket.send(user_id)
         comp_user = client_socket.recv(1024)
         client_socket.send(comp_user)
+        client_path = client_socket.recv(1024)
+        client_socket.send(b'ack')
+        client_path = client_path.decode('utf-8')
         comp_user = comp_user.decode('utf-8')
         user_id = user_id.decode('utf-8')
         user_folder_path = os.path.join(os.getcwd(), user_id)
@@ -106,13 +110,24 @@ while True:
                 header = utils.data_analysis(actions)
                 client_socket.send(b'ack')
                 if header[0] == CREATE:
-                    header[3], extension = os.path.splitext(header[3])
-                    if '' == extension:
-                        new_folder = utils.create_a_folder(header[3], os.getcwd())
+                    if not os.path.isfile(client_path + backslash + header[3]):
+                        new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
                     else:
                         utils.get_files(user_folder_path, client_socket)
                 elif header[0] == DELETE:
-                    os.unlink(user_folder_path + backslash + header[3])
+                    if not os.path.isfile(user_folder_path + backslash + header[3]):
+                        if len(os.listdir(user_folder_path + backslash + header[3])) == 0:
+                            os.rmdir(user_folder_path + backslash + header[3])
+                        else:
+                            delete_folder_path = user_folder_path + backslash + header[3]
+                            folder_to_delete = utils.Folder(delete_folder_path)
+                            folder_to_delete_directory = os.listdir(delete_folder_path)
+                            utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash, delete_folder_path)
+                            utils.delete_from_cloud(folder_to_delete, user_folder_path + backslash + header[3])
+                            os.rmdir(user_folder_path + backslash + header[3])
+                            #data_dic[user_id][0] =
+                    else:
+                        os.remove(user_folder_path + backslash + header[3])
                 client_socket.send(b'ack')
                 update_actions(user_id, comp_user, actions)
         else:

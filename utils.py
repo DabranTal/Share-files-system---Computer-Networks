@@ -83,6 +83,8 @@ def get_relative_path(full_path, main_folder_path):
     return relative_array
 
 
+
+
 def create_sub_folders(folder_path, main_path, sock, user_id):
     relative_path = get_relative_path(folder_path, main_path)
     if relative_path is None:
@@ -93,6 +95,14 @@ def create_sub_folders(folder_path, main_path, sock, user_id):
     header = relative_path + str(1000 - path_len) + str(CREATE) + str(ADD_FOLDER)
     sock.send(str.encode(header))
     get_ack = sock.recv(1024)
+
+
+def delete_from_cloud(folder, main_path):
+    for fold in folder.sub_folders:
+        delete_from_cloud(fold, fold.path)
+        for file in fold.files:
+            os.remove(fold.files[0])
+        os.rmdir(fold.path)
 
 
 def upload_to_cloud(folder, main_path, sock, user_id):
@@ -172,7 +182,7 @@ def is_this_path_exits(path):
 def build_folders_map(folder, directory, backslash, folder_path):
     for file in directory:
         file_name, extension = os.path.splitext(file)
-        if '' == extension:
+        if not os.path.isfile(folder_path + backslash + file):
             folder.sub_folders.append(Folder(folder_path + backslash + file_name))
         else:
             folder.files.append((folder_path + backslash + file))
