@@ -111,7 +111,11 @@ while True:
                 client_socket.send(b'ack')
                 if header[0] == CREATE:
                     if not os.path.isfile(client_path + backslash + header[3]):
-                        new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
+                        if len(os.listdir(client_path + backslash + header[3])) == 0:
+                            new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
+                        else:
+                            add_folder_path = utils.create_a_folder(header[3], os.getcwd() + backslash + user_id)
+                            utils.get_files(add_folder_path, client_socket)
                     else:
                         utils.get_files(user_folder_path, client_socket)
                 elif header[0] == DELETE:
@@ -123,9 +127,8 @@ while True:
                             folder_to_delete = utils.Folder(delete_folder_path)
                             folder_to_delete_directory = os.listdir(delete_folder_path)
                             utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash, delete_folder_path)
-                            utils.delete_from_cloud(folder_to_delete, user_folder_path + backslash + header[3])
+                            utils.delete_from_cloud(folder_to_delete, delete_folder_path)
                             os.rmdir(user_folder_path + backslash + header[3])
-                            #data_dic[user_id][0] =
                     else:
                         os.remove(user_folder_path + backslash + header[3])
                 client_socket.send(b'ack')

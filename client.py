@@ -29,6 +29,11 @@ def on_created(event):
     ack2 = server_socket.recv(1024)
     if os.path.isfile(event.src_path):
         utils.create_file(event.src_path, main_folder.path, server_socket, user_id)
+    else:
+        folder_to_add = utils.Folder(event.src_path)
+        folder_to_add_directory = os.listdir(event.src_path)
+        utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, event.src_path)
+        utils.upload_to_cloud(folder_to_add, event.src_path, server_socket, user_id)
     server_socket.send(b'enough')
     ack3 = server_socket.recv(1024)
     server_socket.close()
