@@ -51,15 +51,16 @@ def update_user_in_data_structure(data_dic, user_id, user_dictionary):
         data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
         must_update = utils.User_Dic(0)
         must_update.folders_map = user_dictionary.folders_map
-        data_dic[user_id][0] = must_update
+        data_dic[user_id]['0'] = must_update
     else:
         if user_dictionary.comp_id in data_dic[user_id]:
             data_dic[user_id][user_dictionary.comp_id] = user_dictionary
+            data_dic[user_id]['0'] = user_dictionary
         else:
             data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
 
 # create user dictionary
-data_dic = {b'': []}
+data_dic = {}
 server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server.bind(('', int(sys.argv[1])))
 server.listen(0)
@@ -132,6 +133,10 @@ while True:
                     else:
                         os.remove(user_folder_path + backslash + header[3])
                 client_socket.send(b'ack')
+                updated_folder = utils.Folder(user_folder_path)
+                updated_folder_directory = os.listdir(user_folder_path)
+                utils.build_folders_map(updated_folder, updated_folder_directory, backslash, user_folder_path)
+                data_dic[user_id]['0'].folders_map = updated_folder
                 update_actions(user_id, comp_user, actions)
         else:
             # copy the user files to the new computer
@@ -142,8 +147,5 @@ while True:
             utils.copy_data(data_dic.get(user_id).get(0).folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
             data_dic[user_id] = {comp_user: data_dic.get(user_id).get(0)}
-
-
-
     client_socket.close()
     print('Client disconnected')

@@ -42,6 +42,7 @@ def on_created(event):
 def on_deleted(event):
     print(f"what the f**k! Someone deleted {event.src_path}!")
     server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
+    ack = server_socket.recv(1024)
     server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(event.src_path, main_folder.path)
