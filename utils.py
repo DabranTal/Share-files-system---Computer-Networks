@@ -101,7 +101,7 @@ def delete_from_cloud(folder, main_path):
     for fold in folder.sub_folders:
         delete_from_cloud(fold, fold.path)
         for file in fold.files:
-            os.remove(fold.files[0])
+            os.remove(file)
         os.rmdir(fold.path)
 
 

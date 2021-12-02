@@ -110,16 +110,20 @@ while True:
                 actions = client_socket.recv(1024)
                 header = utils.data_analysis(actions)
                 client_socket.send(b'ack')
+                # Case the action is create
                 if header[0] == CREATE:
+                    # Check if the path is folder
                     if not os.path.isfile(client_path + backslash + header[3]):
-                        if len(os.listdir(client_path + backslash + header[3])) == 0:
-                            new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
-                        else:
-                            add_folder_path = utils.create_a_folder(header[3], os.getcwd() + backslash + user_id)
-                            utils.get_files(add_folder_path, client_socket)
+                        # Check if the path already exists
+                        if not (os.path.exists(user_folder_path + backslash + header[3])):
+                            if len(os.listdir(client_path + backslash + header[3])) == 0:
+                                new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
+                            else:
+                                add_folder_path = utils.create_a_folder(header[3], os.getcwd() + backslash + user_id)
+                                utils.get_files(add_folder_path, client_socket)
                     else:
                         utils.get_files(user_folder_path, client_socket)
-                elif header[0] == DELETE:
+                elif header[0] == DELETE and os.path.exists(user_folder_path + backslash + header[3]):
                     if not os.path.isfile(user_folder_path + backslash + header[3]):
                         if len(os.listdir(user_folder_path + backslash + header[3])) == 0:
                             os.rmdir(user_folder_path + backslash + header[3])
