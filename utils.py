@@ -1,5 +1,6 @@
 import socket
 import sys
+from socket import error as SocketError
 from sys import platform
 import os
 
@@ -83,8 +84,6 @@ def get_relative_path(full_path, main_folder_path):
     return relative_array
 
 
-
-
 def create_sub_folders(folder_path, main_path, sock, user_id):
     relative_path = get_relative_path(folder_path, main_path)
     if relative_path is None:
@@ -98,10 +97,10 @@ def create_sub_folders(folder_path, main_path, sock, user_id):
 
 
 def delete_from_cloud(folder, main_path):
+    for file in folder.files:
+        os.remove(file)
     for fold in folder.sub_folders:
         delete_from_cloud(fold, fold.path)
-        for file in fold.files:
-            os.remove(file)
         os.rmdir(fold.path)
 
 
@@ -109,7 +108,7 @@ def upload_to_cloud(folder, main_path, sock, user_id):
     for fold in folder.sub_folders:
         create_sub_folders(fold.path, main_path, sock, user_id)
     for file in folder.files:
-        create_file(file, main_path, sock, user_id)
+        send_file(file, main_path, sock, user_id)
     for fold in folder.sub_folders:
         upload_to_cloud(fold, main_path, sock, user_id)
 
@@ -118,7 +117,7 @@ def copy_data(src_map, src_path, dst_socket, user_id):
     upload_to_cloud(src_map, src_path, dst_socket, user_id)
 
 
-def create_file(file, main_path, sock, user_id):
+def send_file(file, main_path, sock, user_id):
     relative_path = get_relative_path(file, main_path)
     if relative_path is None:
         path_len = 0
@@ -163,16 +162,6 @@ def get_files(user_folder_path, sock):
                 new_file.close()
                 sock.send(b'ack')
         header = sock.recv(1024)
-
-"""
-def update_folders(to_change_path, main_path, sock, user_id, action):
-    if CREATE == action:
-        create_file(to_change_path, main_path, sock, user_id)
-    elif DELETE == action:
-        create_files(to_change_path, main_path, sock, user_id)
-    elif UPDATE == action:
-        create_files(to_change_path, main_path, sock, user_id)
-"""
 
 
 def is_this_path_exits(path):

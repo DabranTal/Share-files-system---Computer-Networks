@@ -16,7 +16,7 @@ def run_operations(user_id, comp_user, client_socket):
         if op [1] is DELETE:
             os.remove(user_folder_path + op[0])
         elif op[1] is CREATE:
-            utils.create_file(op[0], user_folder_path, client_socket, user_id)
+            utils.send_file(op[0], user_folder_path, client_socket, user_id)
 
 
 def upload_files_to_folder(file_name, folder_path, got_from_recv):
@@ -34,6 +34,15 @@ def update_actions(user_id, comp_user, header):
     for comp in data_dic[user_id]:
         if comp != comp_user:
             data_dic[user_id][comp].actions = data_dic[user_id][comp].actions + '|' + header[3] + ',' + header[0]
+
+
+def update_b0():
+    client_socket.send(b'ack')
+    updated_folder = utils.Folder(user_folder_path)
+    updated_folder_directory = os.listdir(user_folder_path)
+    utils.build_folders_map(updated_folder, updated_folder_directory, backslash, user_folder_path)
+    data_dic[user_id]['0'].folders_map = updated_folder
+    update_actions(user_id, comp_user, actions)
 
 
 def split_operations(operations):
@@ -68,6 +77,7 @@ if len(sys.argv) != 2:
     exit()
 while True:
     client_socket, client_address = server.accept()
+    ack_flag = 0
     print('Connection from: ', client_address)
     backslash = utils.get_backslash()
     # Client sent the Id
@@ -109,21 +119,31 @@ while True:
                 client_socket.send(b'ack')
                 actions = client_socket.recv(1024)
                 header = utils.data_analysis(actions)
-                client_socket.send(b'ack')
                 # Case the action is create
                 if header[0] == CREATE:
                     # Check if the path is folder
                     if not os.path.isfile(client_path + backslash + header[3]):
                         # Check if the path already exists
                         if not (os.path.exists(user_folder_path + backslash + header[3])):
+                            # send ack to the header
+                            client_socket.send(b'ack')
                             if len(os.listdir(client_path + backslash + header[3])) == 0:
                                 new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
                             else:
                                 add_folder_path = utils.create_a_folder(header[3], os.getcwd() + backslash + user_id)
                                 utils.get_files(add_folder_path, client_socket)
-                    else:
+                            update_b0()
+                            ack_flag = 1
+                    elif not os.path.exists(user_folder_path + backslash + header[3]):
+                        # send ack to the header
+                        client_socket.send(b'ack')
                         utils.get_files(user_folder_path, client_socket)
+                        update_b0()
+                        ack_flag = 1
+                # Case we want delete folder or file
                 elif header[0] == DELETE and os.path.exists(user_folder_path + backslash + header[3]):
+                    # send ack to the header
+                    client_socket.send(b'ack')
                     if not os.path.isfile(user_folder_path + backslash + header[3]):
                         if len(os.listdir(user_folder_path + backslash + header[3])) == 0:
                             os.rmdir(user_folder_path + backslash + header[3])
@@ -136,12 +156,11 @@ while True:
                             os.rmdir(user_folder_path + backslash + header[3])
                     else:
                         os.remove(user_folder_path + backslash + header[3])
-                client_socket.send(b'ack')
-                updated_folder = utils.Folder(user_folder_path)
-                updated_folder_directory = os.listdir(user_folder_path)
-                utils.build_folders_map(updated_folder, updated_folder_directory, backslash, user_folder_path)
-                data_dic[user_id]['0'].folders_map = updated_folder
-                update_actions(user_id, comp_user, actions)
+                    update_b0()
+                    ack_flag = 1
+                # dont send ack to the header
+                if ack_flag == 0:
+                    client_socket.send(b'bye')
         else:
             # copy the user files to the new computer
             comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
