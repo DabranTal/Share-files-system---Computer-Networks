@@ -20,15 +20,16 @@ BITS_ON_BYTE = 8
 
 def on_created(event):
     print(f"hey, {event.src_path} has been created!")
-    if os.path.exists(event.src_path):
-        server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
-        ack = server_socket.recv(1024)
-        server_socket.send(b'true')
-        ack1 = server_socket.recv(1024)
-        relative = utils.get_relative_path(event.src_path, main_folder.path)
-        server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
-        ack2 = server_socket.recv(1024)
-        if os.path.isfile(event.src_path):
+    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
+    ack = server_socket.recv(1024)
+    server_socket.send(b'true')
+    ack1 = server_socket.recv(1024)
+    relative = utils.get_relative_path(event.src_path, main_folder.path)
+    server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
+    ack2 = server_socket.recv(1024)
+    if ack2 != b'bye':
+        tmp_path, extension = os.path.splitext(event.src_path)
+        if os.path.isfile(event.src_path) or '' != extension:
             utils.send_file(event.src_path, main_folder.path, server_socket, user_id)
         else:
             folder_to_add = utils.Folder(event.src_path)
@@ -37,7 +38,7 @@ def on_created(event):
             utils.upload_to_cloud(folder_to_add, event.src_path, server_socket, user_id)
         server_socket.send(b'enough')
         ack3 = server_socket.recv(1024)
-        server_socket.close()
+    server_socket.close()
 
 
 def on_deleted(event):
@@ -51,67 +52,39 @@ def on_deleted(event):
     ack2 = server_socket.recv(1024)
     server_socket.close()
 
-def update_delete(src_path):
-    server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
-    ack = server_socket.recv(1024)
-    server_socket.send(b'true')
-    ack1 = server_socket.recv(1024)
-    relative = utils.get_relative_path(src_path, main_folder.path)
-    server_socket.send((relative + str(1000 - len(relative)) + '0' + str(DELETE)).encode())
-    ack2 = server_socket.recv(1024)
-    server_socket.close()
 
-def update_create(dst_path):
+def on_moved(event):
+    print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
     server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
     ack = server_socket.recv(1024)
     server_socket.send(b'true')
     ack1 = server_socket.recv(1024)
-    relative = utils.get_relative_path(dst_path, main_folder.path)
+    relative = utils.get_relative_path(event.dest_path, main_folder.path)
     # Send the server dst header
     server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
     # get ack for the header
     ack2 = server_socket.recv(1024)
-    if os.path.isfile(dst_path):
-        utils.send_file(dst_path, main_folder.path, server_socket, user_id)
-    server_socket.send(b'enough')
-    ack3 = server_socket.recv(1024)
-    server_socket.close()
-
-def on_moved(event):
-    print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
-    if os.path.exists(event.src_path):
+    if ack2 != b'bye':
+        tmp_path, extension = os.path.splitext(event.dest_path)
+        if os.path.isfile(event.dest_path) or '' != extension:
+            utils.send_file(event.dest_path, main_folder.path, server_socket, user_id)
+        else:
+            folder_to_add = utils.Folder(event.dest_path)
+            folder_to_add_directory = os.listdir(event.dest_path)
+            utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, event.dest_path)
+            utils.upload_to_cloud(folder_to_add, event.dest_path, server_socket, user_id)
+        server_socket.send(b'enough')
+        ack3 = server_socket.recv(1024)
+        server_socket.close()
+        # Delete the source of what we create
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
         ack = server_socket.recv(1024)
         server_socket.send(b'true')
         ack1 = server_socket.recv(1024)
-        relative = utils.get_relative_path(event.dest_path, main_folder.path)
-        # Send the server dst header
-        server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
-        # get ack for the header
+        relative = utils.get_relative_path(event.src_path, main_folder.path)
+        server_socket.send((relative + str(1000 - len(relative)) + '0' + str(DELETE)).encode())
         ack2 = server_socket.recv(1024)
-        if ack2 != b'bye':
-            if os.path.isfile(event.src_path):
-                utils.send_file(event.src_path, main_folder.path, server_socket, user_id)
-            else:
-                folder_to_add = utils.Folder(event.dest_path)
-                folder_to_add_directory = os.listdir(event.dest_path)
-                utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, event.dest_path)
-                utils.upload_to_cloud(folder_to_add, event.dest_path, server_socket, user_id)
-            server_socket.send(b'enough')
-            ack3 = server_socket.recv(1024)
-            server_socket.close()
-            # Delete the source of what we create
-            server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
-            ack = server_socket.recv(1024)
-            server_socket.send(b'true')
-            ack1 = server_socket.recv(1024)
-            relative = utils.get_relative_path(event.src_path, main_folder.path)
-            server_socket.send((relative + str(1000 - len(relative)) + '0' + str(DELETE)).encode())
-            ack2 = server_socket.recv(1024)
-        server_socket.close()
-    else:
-        update_delete(event.dest_path)
-        update_create(event.dest_path)
+    server_socket.close()
 
 
 def start_connection(user_id, comp_id, folder_path):
@@ -181,4 +154,3 @@ try:
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()
-
