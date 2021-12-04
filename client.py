@@ -30,6 +30,7 @@ def check_if_exist_path(main_folder ,event):
 
 
 def rebuild_folder_map():
+    global main_folder
     main_folder1 = utils.Folder(folder_path)
     my_directory1 = os.listdir(folder_path)
     utils.build_folders_map(main_folder1, my_directory1, backslash, folder_path)
@@ -172,7 +173,6 @@ if len(sys.argv) == 6:
 backslash = utils.get_backslash()
 my_directory = os.listdir(folder_path)
 main_folder = utils.Folder(folder_path)
-
 patterns = ["*"]
 ignore_patterns = None
 ignore_directories = False
