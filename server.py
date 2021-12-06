@@ -105,6 +105,9 @@ while True:
     else:
         client_socket.send(user_id)
         comp_user = client_socket.recv(1024)
+        if comp_user == b'0':
+            comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+            client_socket.send(str.encode(comp_user))
         client_socket.send(comp_user)
         client_path = client_socket.recv(1024)
         client_socket.send(b'ack')
@@ -112,6 +115,8 @@ while True:
         comp_user = comp_user.decode('utf-8')
         user_id = user_id.decode('utf-8')
         user_folder_path = os.path.join(os.getcwd(), user_id)
+        print(user_id)
+        # Case user already log in with this computer
         if comp_user in data_dic.get(user_id):
             run_operations(user_id, comp_user, client_socket)
             there_is_a_changes = client_socket.recv(1024)
@@ -161,10 +166,9 @@ while True:
                 # dont send ack to the header
                 if ack_flag == 0:
                     client_socket.send(b'bye')
+        # Case user didn't log in yet with this computer
         else:
             # copy the user files to the new computer
-            comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-            client_socket.send(str.encode(comp_user))
             ack = client_socket.recv(1024)
             user_dictionary = utils.User_Dic(comp_user)
             utils.copy_data(data_dic.get(user_id).get(0).folders_map, user_folder_path, client_socket, user_id)

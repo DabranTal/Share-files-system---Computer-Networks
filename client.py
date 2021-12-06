@@ -17,15 +17,15 @@ INT_IN_BITS = 32
 BITS_ON_BYTE = 8
 
 def check_if_exist_path(main_folder ,event):
-    x = False
+    x = 0
     for fold in main_folder.sub_folders:
         if fold.path == event:
-            return True
+            return 1
     for file in main_folder.files:
         if file == event:
-            return True
+            return 1
     for fold in main_folder.sub_folders:
-        x = check_if_exist_path(fold, event)
+        x += check_if_exist_path(fold, event)
     return x
 
 
@@ -39,7 +39,7 @@ def rebuild_folder_map():
 
 def on_created(event):
     print(f"hey, {event.src_path} has been created!")
-    time.sleep(1)
+    time.sleep(0.1)
     if os.path.exists(event.src_path):
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
         ack = server_socket.recv(1024)
@@ -110,7 +110,7 @@ def on_moved(event):
     print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
     # FOR CONTINUE WITH UPDATE FILES WE NEED TO SCAN ALL THE 'MAIN_FOLDER' MAP
     # AND THE IF THE SRC.PATH DIDN'T EXIST ITS A SIGN THAT UPDATE ARE OCCURRED
-    if check_if_exist_path(main_folder, event.src_path):
+    if check_if_exist_path(main_folder, event.src_path) != 0:
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
         ack = server_socket.recv(1024)
         server_socket.send(b'true')
@@ -198,6 +198,7 @@ if temp_user_id != user_id.encode():
     # utils.upload_to_cloud(main_folder, main_folder.path, s, user_id)
     server_socket.send(b'enough')
 else:
+    server_socket.send(b'ack')
     utils.get_files(main_folder.path, server_socket)
 server_socket.close()
 

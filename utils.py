@@ -146,6 +146,7 @@ def create_a_folder(folder_name, directory):
 def get_files(user_folder_path, sock):
     backslash = get_backslash()
     header = sock.recv(1024)
+    print(header)
     while header != b'enough':
         header = data_analysis(header)
         if ADD_FOLDER == int(header[0]):
