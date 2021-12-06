@@ -174,6 +174,20 @@ if len(sys.argv) == 6:
 backslash = utils.get_backslash()
 my_directory = os.listdir(folder_path)
 main_folder = utils.Folder(folder_path)
+server_socket, temp_user_id, comp_id = start_connection(user_id.encode(), comp_id, folder_path)
+# If the ID doesnt exist get new id and build folders map
+if temp_user_id != user_id.encode():
+    utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
+    user_id = temp_user_id
+    # Start sync folders map
+    utils.copy_data(main_folder, main_folder.path, server_socket, user_id)
+    # utils.upload_to_cloud(main_folder, main_folder.path, s, user_id)
+    server_socket.send(b'enough')
+else:
+    ack = server_socket.recv(1024)
+    utils.get_files(main_folder.path, server_socket)
+server_socket.close()
+
 patterns = ["*"]
 ignore_patterns = None
 ignore_directories = False
@@ -187,20 +201,6 @@ go_recursively = True
 my_observer = Observer()
 my_observer.schedule(my_event_handler, main_folder.path, go_recursively)
 my_observer.start()
-
-server_socket, temp_user_id, comp_id = start_connection(user_id.encode(), comp_id, folder_path)
-# If the ID doesnt exist get new id and build folders map
-if temp_user_id != user_id.encode():
-    utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
-    user_id = temp_user_id
-    # Start sync folders map
-    utils.copy_data(main_folder, main_folder.path, server_socket, user_id)
-    # utils.upload_to_cloud(main_folder, main_folder.path, s, user_id)
-    server_socket.send(b'enough')
-else:
-    server_socket.send(b'ack')
-    utils.get_files(main_folder.path, server_socket)
-server_socket.close()
 
 try:
     while True:

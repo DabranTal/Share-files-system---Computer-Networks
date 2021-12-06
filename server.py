@@ -105,14 +105,13 @@ while True:
     else:
         client_socket.send(user_id)
         comp_user = client_socket.recv(1024)
-        if comp_user == b'0':
+        comp_user = comp_user.decode('utf-8')
+        if comp_user == '0':
             comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
-            client_socket.send(str.encode(comp_user))
-        client_socket.send(comp_user)
+        client_socket.send(comp_user.encode())
         client_path = client_socket.recv(1024)
         client_socket.send(b'ack')
         client_path = client_path.decode('utf-8')
-        comp_user = comp_user.decode('utf-8')
         user_id = user_id.decode('utf-8')
         user_folder_path = os.path.join(os.getcwd(), user_id)
         print(user_id)
@@ -169,9 +168,7 @@ while True:
         # Case user didn't log in yet with this computer
         else:
             # copy the user files to the new computer
-            ack = client_socket.recv(1024)
-            user_dictionary = utils.User_Dic(comp_user)
-            utils.copy_data(data_dic.get(user_id).get(0).folders_map, user_folder_path, client_socket, user_id)
+            utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
             data_dic[user_id] = {comp_user: data_dic.get(user_id).get(0)}
     client_socket.close()
