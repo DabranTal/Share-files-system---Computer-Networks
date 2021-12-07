@@ -232,7 +232,6 @@ try:
                 # send ack to the header
                 else:
                     utils.get_files(main_folder.path, server_socket)
-
             action = server_socket.recv(1024)
             server_socket.send(b'ack')
             updated_folder = utils.Folder(main_folder.path)

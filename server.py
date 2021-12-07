@@ -194,6 +194,9 @@ while True:
                             utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, to_create)
                             utils.upload_to_cloud(folder_to_add, to_create, client_socket, user_id)
                 client_socket.send(b'enough')
+                """"
+                This Ack doesn't get somehow!!
+                """
                 ack = client_socket.recv(1024)
                 data_dic[user_id][comp_user].actions = ''
                 print(comp_user)
