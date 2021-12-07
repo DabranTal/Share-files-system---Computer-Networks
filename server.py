@@ -188,6 +188,9 @@ while True:
                             utils.send_file(to_create, user_folder_path, client_socket)
                         else:
                             new_action = action[0] + str(1000 - len(action[0])) + 'd' + CREATE
+                            new_action = new_action.encode()
+                            client_socket.send(new_action)
+                            ack = client_socket.recv(1024)
                             folder_to_add = utils.Folder(to_create)
                             folder_to_add_directory = os.listdir(to_create)
                             utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, to_create)

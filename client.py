@@ -225,13 +225,12 @@ try:
                     os.remove(main_folder.path + backslash + action[3])
             else:
                 if action[2] != 'f':
-                    server_socket.send(b'ack')
                     add_folder_path = utils.create_a_folder(action[3], os.getcwd() + backslash + user_id)
                     utils.get_files(add_folder_path, server_socket)
                 else:
-                    server_socket.send(b'ack')
                     utils.get_files(main_folder.path, server_socket)
-
+            action = server_socket.recv(1024)
+            server_socket.send(b'ack')
 
 
 except KeyboardInterrupt:
