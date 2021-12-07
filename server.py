@@ -1,3 +1,4 @@
+import copy
 import random
 import socket
 import string
@@ -167,13 +168,24 @@ while True:
             else:
                 to_do_list = split_operations(data_dic.get(user_id).get(comp_user).actions)
                 for action in to_do_list:
-                    x = 5
+                    if action[1] == DELETE:
+                        new_action = action[0] + str(1000 - len(action[0])) + '0' + DELETE
+                        new_action = new_action.encode()
+                        client_socket.send(new_action)
+                        ack = client_socket.recv(1024)
+                client_socket.send(b'enough')
+                ack = client_socket.recv(1024)
+                data_dic[user_id][comp_user].actions = ''
+                print(comp_user)
+                print(data_dic[user_id][comp_user].actions)
         # Case user didn't log in yet with this computer
         else:
             print(user_id)
             # copy the user files to the new computer
             utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
-            data_dic[user_id][comp_user] = data_dic.get(user_id).get('0')
+            # data_dic[user_id][comp_user] = data_dic.get(user_id).get('0')
+            data_dic[user_id][comp_user] = copy.deepcopy(data_dic.get(user_id).get('0'))
+            data_dic[user_id][comp_user].actions = ''
     client_socket.close()
     print('Client disconnected')

@@ -7,14 +7,9 @@ import utils
 import watchdog
 from watchdog.observers import Observer
 from watchdog.events import LoggingEventHandler, PatternMatchingEventHandler
-CREATE = 1
-UPDATE = 3
-DELETE = 4
-FINISH = 1
-NO_FINISH = 0
-SEGMENT_SIZE = 1024
-INT_IN_BITS = 32
-BITS_ON_BYTE = 8
+CREATE = '1'
+DELETE = '4'
+
 
 def check_if_exist_path(main_folder ,event):
     x = 0
@@ -210,6 +205,32 @@ try:
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
         ack = server_socket.recv(1024)
         server_socket.send(b'false')
+        action = server_socket.recv(1024)
+        server_socket.send(b'ack')
+        while action != b'enough':
+            action = utils.data_analysis(action)
+            if action[0] == DELETE:
+                if not os.path.isfile(main_folder.path + backslash + action[3]):
+                    if len(os.listdir(main_folder.path + backslash + action[3])) == 0:
+                        os.rmdir(main_folder.path + backslash + action[3])
+                    else:
+                        delete_folder_path = main_folder.path + backslash + action[3]
+                        folder_to_delete = utils.Folder(delete_folder_path)
+                        folder_to_delete_directory = os.listdir(delete_folder_path)
+                        utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash,
+                                                delete_folder_path)
+                        utils.delete_from_cloud(folder_to_delete, delete_folder_path)
+                        os.rmdir(main_folder.path + backslash + action[3])
+                else:
+                    os.remove(main_folder.path + backslash + action[3])
+            if action[0] == CREATE:
+                x = 7
+            action = server_socket.recv(1024)
+            server_socket.send(b'ack')
+
+
+
+
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()
