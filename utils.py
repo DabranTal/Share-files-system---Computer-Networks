@@ -108,7 +108,7 @@ def upload_to_cloud(folder, main_path, sock, user_id):
     for fold in folder.sub_folders:
         create_sub_folders(fold.path, main_path, sock, user_id)
     for file in folder.files:
-        send_file(file, main_path, sock, user_id)
+        send_file(file, main_path, sock)
     for fold in folder.sub_folders:
         upload_to_cloud(fold, main_path, sock, user_id)
 
@@ -117,7 +117,7 @@ def copy_data(src_map, src_path, dst_socket, user_id):
     upload_to_cloud(src_map, src_path, dst_socket, user_id)
 
 
-def send_file(file, main_path, sock, user_id):
+def send_file(file, main_path, sock):
     relative_path = get_relative_path(file, main_path)
     if relative_path is None:
         path_len = 0

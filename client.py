@@ -46,7 +46,7 @@ def on_created(event):
         if ack2 != b'bye':
             tmp_path, extension = os.path.splitext(event.src_path)
             if os.path.isfile(event.src_path) or '' != extension:
-                utils.send_file(event.src_path, main_folder.path, server_socket, user_id)
+                utils.send_file(event.src_path, main_folder.path, server_socket)
             else:
                 folder_to_add = utils.Folder(event.src_path)
                 folder_to_add_directory = os.listdir(event.src_path)
@@ -94,7 +94,7 @@ def update_create(dst_path):
     # get ack for the header
     ack2 = server_socket.recv(1024)
     if os.path.isfile(dst_path):
-        utils.send_file(dst_path, main_folder.path, server_socket, user_id)
+        utils.send_file(dst_path, main_folder.path, server_socket)
     server_socket.send(b'enough')
     ack3 = server_socket.recv(1024)
     server_socket.close()
@@ -118,7 +118,7 @@ def on_moved(event):
         if ack2 != b'bye':
             tmp_path, extension = os.path.splitext(event.dest_path)
             if os.path.isfile(event.dest_path) or '' != extension:
-                utils.send_file(event.dest_path, main_folder.path, server_socket, user_id)
+                utils.send_file(event.dest_path, main_folder.path, server_socket)
             else:
                 folder_to_add = utils.Folder(event.dest_path)
                 folder_to_add_directory = os.listdir(event.dest_path)
@@ -224,9 +224,21 @@ try:
                 else:
                     os.remove(main_folder.path + backslash + action[3])
             if action[0] == CREATE:
-                x = 7
+                # Check if the path is folder
+                if not action[1] == 'f':
+                    # Check if the path already exists
+                    if not (os.path.exists(main_folder.path + backslash + action[3])):
+                        # send ack to the header
+                        add_folder_path = utils.create_a_folder(action[3], os.getcwd() + backslash + user_id)
+                        utils.get_files(add_folder_path, server_socket)
+                else:
+                    # send ack to the header
+                    utils.get_files(main_folder.path, server_socket)
             action = server_socket.recv(1024)
             server_socket.send(b'ack')
+            updated_folder = utils.Folder(main_folder.path)
+            updated_folder_directory = os.listdir(main_folder.path)
+            utils.build_folders_map(updated_folder, updated_folder_directory, backslash, main_folder.path)
 
 
 

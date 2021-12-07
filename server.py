@@ -17,7 +17,7 @@ def run_operations(user_id, comp_user, client_socket):
         if op[1] is DELETE:
             os.remove(os.path.join(user_folder_path, op[0]))
         elif op[1] is CREATE:
-            utils.send_file(op[0], user_folder_path, client_socket, user_id)
+            utils.send_file(op[0], user_folder_path, client_socket)
 
 
 def upload_files_to_folder(file_name, folder_path, got_from_recv):
@@ -155,7 +155,8 @@ while True:
                             delete_folder_path = user_folder_path + backslash + header[3]
                             folder_to_delete = utils.Folder(delete_folder_path)
                             folder_to_delete_directory = os.listdir(delete_folder_path)
-                            utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash, delete_folder_path)
+                            utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash,
+                                                    delete_folder_path)
                             utils.delete_from_cloud(folder_to_delete, delete_folder_path)
                             os.rmdir(user_folder_path + backslash + header[3])
                     else:
@@ -169,18 +170,34 @@ while True:
                 to_do_list = split_operations(data_dic.get(user_id).get(comp_user).actions)
                 for action in to_do_list:
                     if action[1] == DELETE:
-                        new_action = action[0] + str(1000 - len(action[0])) + '0' + DELETE
+                        if os.path.isfile(os.path.join(user_folder_path, action[0])):
+                            new_action = action[0] + str(1000 - len(action[0])) + 'f' + DELETE
+                        else:
+                            new_action = action[0] + str(1000 - len(action[0])) + 'd' + DELETE
                         new_action = new_action.encode()
                         client_socket.send(new_action)
                         ack = client_socket.recv(1024)
+                    if action[1] == CREATE:
+                        # Check if the client need to create file or directory
+                        to_create = os.path.join(user_folder_path, action[0])
+                        if os.path.isfile(to_create):
+                            new_action = action[0] + str(1000 - len(action[0])) + 'f' + CREATE
+                            new_action = new_action.encode()
+                            client_socket.send(new_action)
+                            ack = client_socket.recv(1024)
+                            utils.send_file(to_create, user_folder_path, client_socket)
+                        else:
+                            new_action = action[0] + str(1000 - len(action[0])) + 'd' + CREATE
+                            folder_to_add = utils.Folder(to_create)
+                            folder_to_add_directory = os.listdir(to_create)
+                            utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, to_create)
+                            utils.upload_to_cloud(folder_to_add, to_create, client_socket, user_id)
                 client_socket.send(b'enough')
                 ack = client_socket.recv(1024)
                 data_dic[user_id][comp_user].actions = ''
                 print(comp_user)
-                print(data_dic[user_id][comp_user].actions)
         # Case user didn't log in yet with this computer
         else:
-            print(user_id)
             # copy the user files to the new computer
             utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
