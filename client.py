@@ -223,23 +223,14 @@ try:
                         os.rmdir(main_folder.path + backslash + action[3])
                 else:
                     os.remove(main_folder.path + backslash + action[3])
-            if action[0] == CREATE:
-                # Check if the path is folder
-                if not action[1] == 'f':
-                    # Check if the path already exists
-                    if not (os.path.exists(main_folder.path + backslash + action[3])):
-                        # send ack to the header
-                        add_folder_path = utils.create_a_folder(action[3], os.getcwd() + backslash + user_id)
-                        utils.get_files(add_folder_path, server_socket)
+            else:
+                if action[2] != 'f':
+                    server_socket.send(b'ack')
+                    add_folder_path = utils.create_a_folder(action[3], os.getcwd() + backslash + user_id)
+                    utils.get_files(add_folder_path, server_socket)
                 else:
-                    # send ack to the header
+                    server_socket.send(b'ack')
                     utils.get_files(main_folder.path, server_socket)
-            action = server_socket.recv(1024)
-            server_socket.send(b'ack')
-            updated_folder = utils.Folder(main_folder.path)
-            updated_folder_directory = os.listdir(main_folder.path)
-            utils.build_folders_map(updated_folder, updated_folder_directory, backslash, main_folder.path)
-
 
 
 
