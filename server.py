@@ -13,8 +13,8 @@ DELETE = '4'
 def run_operations(user_id, comp_user, client_socket):
     operations = split_operations(data_dic[user_id][comp_user].actions)
     for op in operations:
-        if op [1] is DELETE:
-            os.remove(user_folder_path + op[0])
+        if op[1] is DELETE:
+            os.remove(os.path.join(user_folder_path, op[0]))
         elif op[1] is CREATE:
             utils.send_file(op[0], user_folder_path, client_socket, user_id)
 
@@ -114,10 +114,9 @@ while True:
         client_path = client_path.decode('utf-8')
         user_id = user_id.decode('utf-8')
         user_folder_path = os.path.join(os.getcwd(), user_id)
-        print(user_id)
         # Case user already log in with this computer
         if comp_user in data_dic.get(user_id):
-            run_operations(user_id, comp_user, client_socket)
+            # run_operations(user_id, comp_user, client_socket)
             there_is_a_changes = client_socket.recv(1024)
             if there_is_a_changes == b'true':
                 client_socket.send(b'ack')
@@ -165,11 +164,16 @@ while True:
                 # dont send ack to the header
                 if ack_flag == 0:
                     client_socket.send(b'bye')
+            else:
+                to_do_list = split_operations(data_dic.get(user_id).get(comp_user).actions)
+                for action in to_do_list:
+                    x = 5
         # Case user didn't log in yet with this computer
         else:
+            print(user_id)
             # copy the user files to the new computer
             utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
-            data_dic[user_id] = {comp_user: data_dic.get(user_id).get(0)}
+            data_dic[user_id][comp_user] = data_dic.get(user_id).get('0')
     client_socket.close()
     print('Client disconnected')

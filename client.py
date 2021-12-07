@@ -152,6 +152,8 @@ def start_connection(user_id, comp_id, folder_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_server, int(port_server)))
     # Make sure the server know who am i
+    if isinstance(user_id, str):
+        user_id = user_id.encode()
     server_socket.send(user_id)
     temp_user_id = server_socket.recv(1024)
     server_socket.send(comp_id)
@@ -205,6 +207,9 @@ my_observer.start()
 try:
     while True:
         time.sleep(int(time_temp))
+        server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
+        ack = server_socket.recv(1024)
+        server_socket.send(b'false')
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()
