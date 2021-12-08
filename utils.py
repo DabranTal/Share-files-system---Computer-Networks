@@ -139,30 +139,31 @@ def send_file(file, main_path, sock):
 
 def create_a_folder(folder_name, directory):
     path = os.path.join(directory, folder_name)
-    os.mkdir(path)
+    if not os.path.exists(path):
+        os.mkdir(path)
     return path
 
 
 def get_files(user_folder_path, sock):
     backslash = get_backslash()
     header = sock.recv(1024)
+    sock.send(b'ack')
     print(header)
     while header != b'enough':
         header = data_analysis(header)
         if ADD_FOLDER == int(header[0]):
-            sock.send(b'ack')
             create_a_folder(header[3], user_folder_path)
         else:
             file = None
             with open(user_folder_path + backslash + header[3], 'wb') as new_file:
                 while file != b'stop':
-                    sock.send(b'ack')
                     file = sock.recv(1024)
+                    sock.send(b'ack')
                     if b'stop' != file:
                         new_file.write(file)
                 new_file.close()
-                sock.send(b'ack')
         header = sock.recv(1024)
+        sock.send(b'ack')
 
 
 def is_this_path_exits(path):
@@ -172,8 +173,8 @@ def is_this_path_exits(path):
 def build_folders_map(folder, directory, backslash, folder_path):
     for file in directory:
         file_name, extension = os.path.splitext(file)
-        if not os.path.isfile(folder_path + backslash + file):
-            folder.sub_folders.append(Folder(folder_path + backslash + file_name))
+        if os.path.isdir(folder_path + backslash + file):
+            folder.sub_folders.append(Folder(folder_path + backslash + file))
         else:
             folder.files.append((folder_path + backslash + file))
     if 0 < len(folder.sub_folders):

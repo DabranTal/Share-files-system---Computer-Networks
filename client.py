@@ -44,8 +44,7 @@ def on_created(event):
         server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
         ack2 = server_socket.recv(1024)
         if ack2 != b'bye':
-            tmp_path, extension = os.path.splitext(event.src_path)
-            if os.path.isfile(event.src_path) or '' != extension:
+            if os.path.isfile(event.src_path):
                 utils.send_file(event.src_path, main_folder.path, server_socket)
             else:
                 folder_to_add = utils.Folder(event.src_path)
@@ -116,8 +115,7 @@ def on_moved(event):
         # get ack for the header
         ack2 = server_socket.recv(1024)
         if ack2 != b'bye':
-            tmp_path, extension = os.path.splitext(event.dest_path)
-            if os.path.isfile(event.dest_path) or '' != extension:
+            if os.path.isfile(event.dest_path):
                 utils.send_file(event.dest_path, main_folder.path, server_socket)
             else:
                 folder_to_add = utils.Folder(event.dest_path)
@@ -161,6 +159,8 @@ def start_connection(user_id, comp_id, folder_path):
 ip_server = sys.argv[1]
 port_server = sys.argv[2]
 folder_path = sys.argv[3]
+if not os.path.exists(folder_path):
+    os.mkdir(folder_path)
 time_temp = sys.argv[4]
 # Set default id for case the is isn't define by an argument
 user_id = '0'
@@ -207,10 +207,10 @@ try:
         server_socket.send(b'false')
         action = server_socket.recv(1024)
         server_socket.send(b'ack')
-        while action != b'no_actions':
+        while action != b'enough':
             action = utils.data_analysis(action)
             if action[0] == DELETE:
-                if not os.path.isfile(main_folder.path + backslash + action[3]):
+                if os.path.isdir(main_folder.path + backslash + action[3]):
                     if len(os.listdir(main_folder.path + backslash + action[3])) == 0:
                         os.rmdir(main_folder.path + backslash + action[3])
                     else:

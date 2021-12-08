@@ -127,7 +127,7 @@ while True:
                 # Case the action is create
                 if header[0] == CREATE:
                     # Check if the path is folder
-                    if not os.path.isfile(client_path + backslash + header[3]):
+                    if os.path.isdir(client_path + backslash + header[3]):
                         # Check if the path already exists
                         if not (os.path.exists(user_folder_path + backslash + header[3])):
                             # send ack to the header
@@ -149,7 +149,7 @@ while True:
                 elif header[0] == DELETE and os.path.exists(user_folder_path + backslash + header[3]):
                     # send ack to the header
                     client_socket.send(b'ack')
-                    if not os.path.isfile(user_folder_path + backslash + header[3]):
+                    if os.path.isdir(user_folder_path + backslash + header[3]):
                         if len(os.listdir(user_folder_path + backslash + header[3])) == 0:
                             os.rmdir(user_folder_path + backslash + header[3])
                         else:
@@ -188,6 +188,7 @@ while True:
                             ack = client_socket.recv(1024)
                             utils.send_file(to_create, user_folder_path, client_socket)
                             client_socket.send(b'enough')
+                            ack = client_socket.recv(1024)
                         else:
                             if len(os.listdir(to_create)) == 0:
                                 new_action = action[0] + str(1000 - len(action[0])) + 'e' + CREATE
@@ -202,7 +203,7 @@ while True:
                             utils.upload_to_cloud(folder_to_add, to_create, client_socket, user_id)
                             if len(os.listdir(to_create)) != 0:
                                 client_socket.send(b'enough')
-                client_socket.send(b'no_actions')
+                client_socket.send(b'enough')
                 """"
                 This Ack doesn't get somehow!!
                 """
