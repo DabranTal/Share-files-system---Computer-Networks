@@ -227,21 +227,19 @@ try:
                 # Check if the path is folder
                 if not action[1] == 'f':
                     # Check if the path already exists
-                    add_folder_path = utils.create_a_folder(action[3], os.getcwd() + backslash + user_id)
-                    utils.get_files(add_folder_path, server_socket)
+                    if action[1] == 'd':
+                        add_folder_path = utils.create_a_folder(action[3], main_folder.path)
+                        utils.get_files(add_folder_path, server_socket)
+                    else:
+                        utils.create_a_folder(action[3], main_folder.path)
                 # send ack to the header
                 else:
                     utils.get_files(main_folder.path, server_socket)
-
             action = server_socket.recv(1024)
             server_socket.send(b'ack')
             updated_folder = utils.Folder(main_folder.path)
             updated_folder_directory = os.listdir(main_folder.path)
             utils.build_folders_map(updated_folder, updated_folder_directory, backslash, main_folder.path)
-
-
-
-
 except KeyboardInterrupt:
     my_observer.stop()
     my_observer.join()

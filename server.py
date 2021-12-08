@@ -187,12 +187,21 @@ while True:
                             client_socket.send(new_action)
                             ack = client_socket.recv(1024)
                             utils.send_file(to_create, user_folder_path, client_socket)
+                            client_socket.send(b'enough')
                         else:
-                            new_action = action[0] + str(1000 - len(action[0])) + 'd' + CREATE
+                            if len(os.listdir(to_create)) == 0:
+                                new_action = action[0] + str(1000 - len(action[0])) + 'e' + CREATE
+                            else:
+                                new_action = action[0] + str(1000 - len(action[0])) + 'd' + CREATE
+                            new_action = new_action.encode()
+                            client_socket.send(new_action)
+                            ack = client_socket.recv(1024)
                             folder_to_add = utils.Folder(to_create)
                             folder_to_add_directory = os.listdir(to_create)
                             utils.build_folders_map(folder_to_add, folder_to_add_directory, backslash, to_create)
                             utils.upload_to_cloud(folder_to_add, to_create, client_socket, user_id)
+                            if len(os.listdir(to_create)) != 0:
+                                client_socket.send(b'enough')
                 client_socket.send(b'enough')
                 ack = client_socket.recv(1024)
                 data_dic[user_id][comp_user].actions = ''
