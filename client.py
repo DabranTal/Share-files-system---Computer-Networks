@@ -141,6 +141,7 @@ def on_moved(event):
         update_create(event.dest_path)
 
 
+
 def start_connection(user_id, comp_id, folder_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_server, int(port_server)))

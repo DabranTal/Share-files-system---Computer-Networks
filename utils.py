@@ -30,11 +30,14 @@ class User_Dic:
     comp_id = ''
     folders_map = None
     actions = ''
+    history = ''
 
     def __init__(self, user_comp):
         self.comp_id = user_comp
         self.folders_map = None
         self.actions = ''
+        self.history = ' '
+
 
 
 

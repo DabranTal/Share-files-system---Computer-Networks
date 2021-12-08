@@ -30,11 +30,22 @@ def upload_files_to_folder(file_name, folder_path, got_from_recv):
         client_socket.send(b'ack')
 
 
+def this_update_loop(action_to_add, comp):
+    may_update = action_to_add + DELETE + action_to_add + CREATE
+    history_actions = data_dic[user_id][comp].history
+    if history_actions.endswith(may_update):
+        return True
+    else:
+        return False
+
+
 def update_actions(user_id, comp_user, header):
     header = utils.data_analysis(header)
     for comp in data_dic[user_id]:
         if comp != comp_user:
-            data_dic[user_id][comp].actions = data_dic[user_id][comp].actions + '|' + header[3] + ',' + header[0]
+            action_to_add = '|' + header[3] + ','
+            if not (this_update_loop(action_to_add, comp)):
+                data_dic[user_id][comp].actions = data_dic[user_id][comp].actions + '|' + header[3] + ',' + header[0]
 
 
 def update_b0():
@@ -208,6 +219,7 @@ while True:
                 This Ack doesn't get somehow!!
                 """
                 ack = client_socket.recv(1024)
+                data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
                 data_dic[user_id][comp_user].actions = ''
                 print(comp_user)
         # Case user didn't log in yet with this computer
@@ -217,6 +229,7 @@ while True:
             client_socket.send(b'enough')
             # data_dic[user_id][comp_user] = data_dic.get(user_id).get('0')
             data_dic[user_id][comp_user] = copy.deepcopy(data_dic.get(user_id).get('0'))
+            data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
             data_dic[user_id][comp_user].actions = ''
     client_socket.close()
     print('Client disconnected')
