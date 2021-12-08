@@ -207,7 +207,7 @@ try:
         server_socket.send(b'false')
         action = server_socket.recv(1024)
         server_socket.send(b'ack')
-        while action != b'enough':
+        while action != b'no_actions':
             action = utils.data_analysis(action)
             if action[0] == DELETE:
                 if not os.path.isfile(main_folder.path + backslash + action[3]):

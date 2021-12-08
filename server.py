@@ -202,7 +202,7 @@ while True:
                             utils.upload_to_cloud(folder_to_add, to_create, client_socket, user_id)
                             if len(os.listdir(to_create)) != 0:
                                 client_socket.send(b'enough')
-                client_socket.send(b'enough')
+                client_socket.send(b'no_actions')
                 """"
                 This Ack doesn't get somehow!!
                 """
