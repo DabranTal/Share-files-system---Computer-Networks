@@ -202,7 +202,7 @@ while True:
                             utils.send_file(to_create, user_folder_path, client_socket)
                             client_socket.send(b'enough')
                             ack = client_socket.recv(1024)
-                        else:
+                        elif os.path.isdir(to_create):
                             if len(os.listdir(to_create)) == 0:
                                 new_action = action[0] + str(1000 - len(action[0])) + 'e' + CREATE
                             else:
@@ -216,6 +216,7 @@ while True:
                             utils.upload_to_cloud(folder_to_add, to_create, client_socket, user_id)
                             if len(os.listdir(to_create)) != 0:
                                 client_socket.send(b'enough')
+                                ack = client_socket.recv(1024)
                 client_socket.send(b'enough')
                 """"
                 This Ack doesn't get somehow!!
