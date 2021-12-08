@@ -3,6 +3,8 @@ import random
 import socket
 import string
 import sys
+import time
+
 import utils
 import os
 ADD_FOLDER = 5
@@ -225,6 +227,7 @@ while True:
         # Case user didn't log in yet with this computer
         else:
             # copy the user files to the new computer
+            time.sleep(1)
             utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
             # data_dic[user_id][comp_user] = data_dic.get(user_id).get('0')
