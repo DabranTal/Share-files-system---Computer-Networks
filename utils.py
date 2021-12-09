@@ -4,9 +4,9 @@ from socket import error as SocketError
 from sys import platform
 import os
 
-CREATE = 1
-UPDATE = 3
-DELETE = 4
+CREATE = '1'
+UPDATE = '3'
+DELETE = '4'
 ADD_FOLDER = 5
 FINISH = 1
 NO_FINISH = 0

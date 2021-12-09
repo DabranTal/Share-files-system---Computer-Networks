@@ -65,7 +65,18 @@ def update_b0():
     utils.build_folders_map(updated_folder, updated_folder_directory, backslash, user_folder_path)
     data_dic[user_id]['0'].folders_map = updated_folder
     update_actions(user_id, comp_user, actions)
-    break_point = 'here'
+
+
+def deep_copy_dic(dest_dic, comp_user, src_dic):
+    dest_dic[comp_user].comp_id = comp_user
+    dest_dic[comp_user].actions = src_dic.actions
+    dest_dic[comp_user].history = ' '
+    updated_folder_directory = os.listdir(user_folder_path)
+    updated_folder = utils.Folder(user_folder_path)
+    utils.build_folders_map(updated_folder, updated_folder_directory, backslash, user_folder_path)
+    dest_dic[comp_user].folders_map = updated_folder
+
+
 
 
 def split_operations(operations):
@@ -240,8 +251,8 @@ while True:
             time.sleep(1)
             utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
-            # data_dic[user_id][comp_user] = data_dic.get(user_id).get('0')
-            data_dic[user_id][comp_user] = copy.deepcopy(data_dic.get(user_id).get('0'))
+            data_dic[user_id][comp_user] = utils.User_Dic(comp_user)
+            deep_copy_dic(data_dic[user_id], comp_user, (data_dic.get(user_id).get('0')))
             data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
             data_dic[user_id][comp_user].actions = ''
     client_socket.close()
