@@ -124,10 +124,10 @@ def on_moved(event):
         ack1 = server_socket.recv(1024)
         relative = utils.get_relative_path(event.dest_path, main_folder.path)
         # Send the server dst header
-        if os.path.isfile(event.src_path):
+        if os.path.isfile(event.dest_path):
             server_socket.send((relative + str(1000 - len(relative)) + 'f' + str(CREATE)).encode())
-        elif os.path.isdir(event.src_path):
-            if len(os.listdir(event.src_path)) == 0:
+        elif os.path.isdir(event.dest_path):
+            if len(os.listdir(event.dest_path)) == 0:
                 server_socket.send((relative + str(1000 - len(relative)) + 'e' + str(CREATE)).encode())
             else:
                 server_socket.send((relative + str(1000 - len(relative)) + 'd' + str(CREATE)).encode())

@@ -14,6 +14,12 @@ DELETE = '4'
 
 
 
+def mycopy(data):
+    if isinstance(data, dict):
+        result = {}
+        for key, value in data.items():
+            result[key] = mycopy(value)
+    return result
 
 def run_operations(user_id, comp_user, client_socket):
     operations = split_operations(data_dic[user_id][comp_user].actions)
@@ -147,6 +153,7 @@ while True:
                         if not (os.path.exists(user_folder_path + backslash + header[3])):
                             # send ack to the header
                             client_socket.send(b'ack')
+                            time.sleep(0.05)
                             if header[1] == 'e':
                                 new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
                             else:
