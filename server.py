@@ -142,12 +142,12 @@ while True:
                 # Case the action is create
                 if header[0] == CREATE:
                     # Check if the path is folder
-                    if os.path.isdir(client_path + backslash + header[3]):
+                    if header[1] != 'f':
                         # Check if the path already exists
                         if not (os.path.exists(user_folder_path + backslash + header[3])):
                             # send ack to the header
                             client_socket.send(b'ack')
-                            if len(os.listdir(client_path + backslash + header[3])) == 0:
+                            if header[1] == 'e':
                                 new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
                             else:
                                 add_folder_path = utils.create_a_folder(header[3], os.getcwd() + backslash + user_id)

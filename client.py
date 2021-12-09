@@ -41,7 +41,13 @@ def on_created(event):
         server_socket.send(b'true')
         ack1 = server_socket.recv(1024)
         relative = utils.get_relative_path(event.src_path, main_folder.path)
-        server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
+        if os.path.isfile(event.src_path):
+            server_socket.send((relative + str(1000 - len(relative)) + 'f' + str(CREATE)).encode())
+        elif os.path.isdir(event.src_path):
+            if len(os.listdir(event.src_path)) == 0:
+                server_socket.send((relative + str(1000 - len(relative)) + 'e' + str(CREATE)).encode())
+            else:
+                server_socket.send((relative + str(1000 - len(relative)) + 'd' + str(CREATE)).encode())
         ack2 = server_socket.recv(1024)
         if ack2 != b'bye':
             if os.path.isfile(event.src_path):
@@ -89,7 +95,13 @@ def update_create(dst_path):
     ack1 = server_socket.recv(1024)
     relative = utils.get_relative_path(dst_path, main_folder.path)
     # Send the server dst header
-    server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
+    if os.path.isfile(dst_path):
+        server_socket.send((relative + str(1000 - len(relative)) + 'f' + str(CREATE)).encode())
+    elif os.path.isdir(dst_path):
+        if len(os.listdir(dst_path)) == 0:
+            server_socket.send((relative + str(1000 - len(relative)) + 'e' + str(CREATE)).encode())
+        else:
+            server_socket.send((relative + str(1000 - len(relative)) + 'd' + str(CREATE)).encode())
     # get ack for the header
     ack2 = server_socket.recv(1024)
     if os.path.isfile(dst_path):
@@ -112,7 +124,13 @@ def on_moved(event):
         ack1 = server_socket.recv(1024)
         relative = utils.get_relative_path(event.dest_path, main_folder.path)
         # Send the server dst header
-        server_socket.send((relative + str(1000 - len(relative)) + '0' + str(CREATE)).encode())
+        if os.path.isfile(event.src_path):
+            server_socket.send((relative + str(1000 - len(relative)) + 'f' + str(CREATE)).encode())
+        elif os.path.isdir(event.src_path):
+            if len(os.listdir(event.src_path)) == 0:
+                server_socket.send((relative + str(1000 - len(relative)) + 'e' + str(CREATE)).encode())
+            else:
+                server_socket.send((relative + str(1000 - len(relative)) + 'd' + str(CREATE)).encode())
         # get ack for the header
         ack2 = server_socket.recv(1024)
         if ack2 != b'bye':
