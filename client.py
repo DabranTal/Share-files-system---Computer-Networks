@@ -11,19 +11,21 @@ CREATE = '1'
 DELETE = '4'
 
 
-def check_if_exist_path(main_folder ,event):
+# This function check if the event path already exist in the client data structure
+def check_if_exist_path(main_folder, event_path):
     x = 0
     for fold in main_folder.sub_folders:
-        if fold.path == event:
+        if fold.path == event_path:
             return 1
     for file in main_folder.files:
-        if file == event:
+        if file == event_path:
             return 1
     for fold in main_folder.sub_folders:
-        x += check_if_exist_path(fold, event)
+        x += check_if_exist_path(fold, event_path)
     return x
 
 
+# This function rebuild client data structure
 def rebuild_folder_map():
     global main_folder
     main_folder1 = utils.Folder(folder_path)
@@ -31,9 +33,10 @@ def rebuild_folder_map():
     utils.build_folders_map(main_folder1, my_directory1, backslash, folder_path)
     main_folder = main_folder1
 
-
+# This function called when Create is happening on the folder our observer cover
 def on_created(event):
-    print(f"hey, {event.src_path} has been created!")
+    print('1')
+    # Let changes done
     time.sleep(0.1)
     if os.path.exists(event.src_path):
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
@@ -63,8 +66,8 @@ def on_created(event):
         rebuild_folder_map()
 
 
+# This function called when Delete is happening on the folder our observer cover
 def on_deleted(event):
-    print(f"what the f**k! Someone deleted {event.src_path}!")
     server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
     ack = server_socket.recv(1024)
     server_socket.send(b'true')
@@ -76,6 +79,7 @@ def on_deleted(event):
     rebuild_folder_map()
 
 
+# This function called when some update happened and the ols file/folder need to be deleted
 def update_delete(src_path):
     server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
     ack = server_socket.recv(1024)
@@ -88,6 +92,7 @@ def update_delete(src_path):
     rebuild_folder_map()
 
 
+# This function called when some update happened and the ols file/folder need to be created
 def update_create(dst_path):
     server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
     ack = server_socket.recv(1024)
@@ -112,11 +117,11 @@ def update_create(dst_path):
     rebuild_folder_map()
 
 
+# This function called when Move or Update is happening on the folder our observer cover
 def on_moved(event):
-    print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
-    # FOR CONTINUE WITH UPDATE FILES WE NEED TO SCAN ALL THE 'MAIN_FOLDER' MAP
-    # AND THE IF THE SRC.PATH DIDN'T EXIST ITS A SIGN THAT UPDATE ARE OCCURRED
+    # Let changes done
     time.sleep(1)
+    # Move situation
     if check_if_exist_path(main_folder, event.src_path) != 0:
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
         ack = server_socket.recv(1024)
@@ -155,12 +160,21 @@ def on_moved(event):
             ack2 = server_socket.recv(1024)
         server_socket.close()
         rebuild_folder_map()
+    # Update situation
     else:
         update_delete(event.dest_path)
         update_create(event.dest_path)
+        # Case two or more folders/files as been moved
+        if event.dest_path != event.src_path:
+            server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
+            ack = server_socket.recv(1024)
+            server_socket.send(b'true')
+            ack1 = server_socket.recv(1024)
+            relative = utils.get_relative_path(event.src_path, main_folder.path)
+            server_socket.send((relative + str(1000 - len(relative)) + '0' + str(DELETE)).encode())
+            ack2 = server_socket.recv(1024)
 
-
-
+# This function connect the server and makes the identify processes
 def start_connection(user_id, comp_id, folder_path):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.connect((ip_server, int(port_server)))
@@ -207,6 +221,7 @@ else:
     utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
 server_socket.close()
 
+# initialize Watchdog
 patterns = ["*"]
 ignore_patterns = None
 ignore_directories = False
@@ -241,7 +256,7 @@ try:
                         folder_to_delete_directory = os.listdir(delete_folder_path)
                         utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash,
                                                 delete_folder_path)
-                        utils.delete_from_cloud(folder_to_delete, delete_folder_path)
+                        utils.delete_from_cloud(folder_to_delete)
                         os.rmdir(main_folder.path + backslash + action[3])
                 else:
                     os.remove(main_folder.path + backslash + action[3])

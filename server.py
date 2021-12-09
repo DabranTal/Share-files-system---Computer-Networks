@@ -1,4 +1,3 @@
-import copy
 import random
 import socket
 import string
@@ -11,23 +10,6 @@ ADD_FOLDER = 5
 CREATE = '1'
 UPDATE = '3'
 DELETE = '4'
-
-
-
-def mycopy(data):
-    if isinstance(data, dict):
-        result = {}
-        for key, value in data.items():
-            result[key] = mycopy(value)
-    return result
-
-def run_operations(user_id, comp_user, client_socket):
-    operations = split_operations(data_dic[user_id][comp_user].actions)
-    for op in operations:
-        if op[1] is DELETE:
-            os.remove(os.path.join(user_folder_path, op[0]))
-        elif op[1] is CREATE:
-            utils.send_file(op[0], user_folder_path, client_socket)
 
 
 def upload_files_to_folder(file_name, folder_path, got_from_recv):
@@ -56,6 +38,8 @@ def update_actions(user_id, comp_user, header):
             action_to_add = '|' + header[3] + ','
             if not (this_update_loop(action_to_add, comp)):
                 data_dic[user_id][comp].actions = data_dic[user_id][comp].actions + '|' + header[3] + ',' + header[0]
+            else:
+                data_dic[user_id][comp].history = ' '
 
 
 def update_b0():
@@ -77,8 +61,6 @@ def deep_copy_dic(dest_dic, comp_user, src_dic):
     dest_dic[comp_user].folders_map = updated_folder
 
 
-
-
 def split_operations(operations):
     operation_split = operations.split("|")
     operation_list = []
@@ -92,7 +74,7 @@ def split_operations(operations):
 def update_user_in_data_structure(data_dic, user_id, user_dictionary):
     if user_id not in data_dic:
         data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
-        must_update = utils.User_Dic(0)
+        must_update = utils.UserDic(0)
         must_update.folders_map = user_dictionary.folders_map
         data_dic[user_id]['0'] = must_update
     else:
@@ -101,6 +83,7 @@ def update_user_in_data_structure(data_dic, user_id, user_dictionary):
             data_dic[user_id]['0'] = user_dictionary
         else:
             data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
+
 
 # create user dictionary
 data_dic = {}
@@ -125,7 +108,7 @@ while True:
         client_socket.send(str.encode(comp_user))
         client_path = client_socket.recv(1024)
         client_path = client_path.decode('utf-8')
-        user_dictionary = utils.User_Dic(comp_user)
+        user_dictionary = utils.UserDic(comp_user)
         # Create main user folder
         user_folder_path = utils.create_a_folder(id_user, os.getcwd())
         # Begin to get files to upload the server cloud
@@ -150,7 +133,6 @@ while True:
         user_folder_path = os.path.join(os.getcwd(), user_id)
         # Case user already log in with this computer
         if comp_user in data_dic.get(user_id):
-            # run_operations(user_id, comp_user, client_socket)
             there_is_a_changes = client_socket.recv(1024)
             if there_is_a_changes == b'true':
                 client_socket.send(b'ack')
@@ -166,7 +148,8 @@ while True:
                             client_socket.send(b'ack')
                             time.sleep(0.05)
                             if header[1] == 'e':
-                                new_folder = utils.create_a_folder(user_folder_path + backslash + header[3], os.getcwd())
+                                new_folder = utils.create_a_folder(user_folder_path + backslash + header[3],
+                                                                   os.getcwd())
                             else:
                                 add_folder_path = utils.create_a_folder(header[3], os.getcwd() + backslash + user_id)
                                 utils.get_files(add_folder_path, client_socket)
@@ -191,7 +174,7 @@ while True:
                             folder_to_delete_directory = os.listdir(delete_folder_path)
                             utils.build_folders_map(folder_to_delete, folder_to_delete_directory, backslash,
                                                     delete_folder_path)
-                            utils.delete_from_cloud(folder_to_delete, delete_folder_path)
+                            utils.delete_from_cloud(folder_to_delete)
                             os.rmdir(user_folder_path + backslash + header[3])
                     else:
                         os.remove(user_folder_path + backslash + header[3])
@@ -238,9 +221,6 @@ while True:
                                 client_socket.send(b'enough')
                                 ack = client_socket.recv(1024)
                 client_socket.send(b'enough')
-                """"
-                This Ack doesn't get somehow!!
-                """
                 ack = client_socket.recv(1024)
                 data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
                 data_dic[user_id][comp_user].actions = ''
@@ -251,7 +231,7 @@ while True:
             time.sleep(1)
             utils.copy_data(data_dic.get(user_id).get('0').folders_map, user_folder_path, client_socket, user_id)
             client_socket.send(b'enough')
-            data_dic[user_id][comp_user] = utils.User_Dic(comp_user)
+            data_dic[user_id][comp_user] = utils.UserDic(comp_user)
             deep_copy_dic(data_dic[user_id], comp_user, (data_dic.get(user_id).get('0')))
             data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
             data_dic[user_id][comp_user].actions = ''

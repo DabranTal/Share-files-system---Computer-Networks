@@ -26,7 +26,7 @@ class Folder:
         self.files = []
 
 
-class User_Dic:
+class UserDic:
     comp_id = ''
     folders_map = None
     actions = ''
@@ -37,8 +37,6 @@ class User_Dic:
         self.folders_map = None
         self.actions = ''
         self.history = ' '
-
-
 
 
 def data_analysis(data):
@@ -87,7 +85,7 @@ def get_relative_path(full_path, main_folder_path):
     return relative_array
 
 
-def create_sub_folders(folder_path, main_path, sock, user_id):
+def create_sub_folders(folder_path, main_path, sock):
     relative_path = get_relative_path(folder_path, main_path)
     if relative_path is None:
         path_len = 0
@@ -99,17 +97,17 @@ def create_sub_folders(folder_path, main_path, sock, user_id):
     get_ack = sock.recv(1024)
 
 
-def delete_from_cloud(folder, main_path):
+def delete_from_cloud(folder):
     for file in folder.files:
         os.remove(file)
     for fold in folder.sub_folders:
-        delete_from_cloud(fold, fold.path)
+        delete_from_cloud(fold)
         os.rmdir(fold.path)
 
 
 def upload_to_cloud(folder, main_path, sock, user_id):
     for fold in folder.sub_folders:
-        create_sub_folders(fold.path, main_path, sock, user_id)
+        create_sub_folders(fold.path, main_path, sock)
     for file in folder.files:
         send_file(file, main_path, sock)
     for fold in folder.sub_folders:
@@ -175,7 +173,6 @@ def is_this_path_exits(path):
 
 def build_folders_map(folder, directory, backslash, folder_path):
     for file in directory:
-        file_name, extension = os.path.splitext(file)
         if os.path.isdir(folder_path + backslash + file):
             folder.sub_folders.append(Folder(folder_path + backslash + file))
         else:
