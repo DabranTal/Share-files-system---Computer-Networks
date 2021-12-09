@@ -12,16 +12,7 @@ UPDATE = '3'
 DELETE = '4'
 
 
-def upload_files_to_folder(file_name, folder_path, got_from_recv):
-    with open(folder_path + backslash + file_name, 'wb') as new_file:
-        while got_from_recv != b'stop':
-            new_file.write(got_from_recv)
-            got_from_recv = client_socket.recv(1024)
-            client_socket.send(b'ack')
-        new_file.close()
-        client_socket.send(b'ack')
-
-
+# This function check if the action will cause to infinity update loop
 def this_update_loop(action_to_add, comp):
     may_update = action_to_add + DELETE + action_to_add + CREATE
     history_actions = data_dic[user_id][comp].history
@@ -30,7 +21,8 @@ def this_update_loop(action_to_add, comp):
     else:
         return False
 
-
+# This function update specific action to all the computers for specific user except the computer
+# that gave the action
 def update_actions(user_id, comp_user, header):
     header = utils.data_analysis(header)
     for comp in data_dic[user_id]:
@@ -42,6 +34,7 @@ def update_actions(user_id, comp_user, header):
                 data_dic[user_id][comp].history = ' '
 
 
+# This function save the most updated version of the cloud server
 def update_b0():
     client_socket.send(b'ack')
     updated_folder = utils.Folder(user_folder_path)
@@ -51,6 +44,7 @@ def update_b0():
     update_actions(user_id, comp_user, actions)
 
 
+# This function implements a deep copy for our dictionary object
 def deep_copy_dic(dest_dic, comp_user, src_dic):
     dest_dic[comp_user].comp_id = comp_user
     dest_dic[comp_user].actions = src_dic.actions
@@ -61,6 +55,7 @@ def deep_copy_dic(dest_dic, comp_user, src_dic):
     dest_dic[comp_user].folders_map = updated_folder
 
 
+# This function splits the actions string and return actions list
 def split_operations(operations):
     operation_split = operations.split("|")
     operation_list = []
@@ -71,6 +66,7 @@ def split_operations(operations):
     return operation_list
 
 
+# This function updates the data structure every time that new user is register
 def update_user_in_data_structure(data_dic, user_id, user_dictionary):
     if user_id not in data_dic:
         data_dic[user_id] = {user_dictionary.comp_id: user_dictionary}
@@ -95,13 +91,14 @@ if len(sys.argv) != 2:
 while True:
     client_socket, client_address = server.accept()
     ack_flag = 0
-    print('Connection from: ', client_address)
     backslash = utils.get_backslash()
     # Client sent the Id
     user_id = client_socket.recv(1024)
     # Case the user is new
     if user_id.decode('utf-8') == '0':
-        id_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
+        id_user = ''.join(random.choice(string.ascii_lowercase + string.ascii_uppercase + string.digits)
+                          for _ in range(128))
+        print(id_user)
         client_socket.send(str.encode(id_user))
         comp_user = client_socket.recv(1024)
         comp_user = ''.join(random.choice(string.ascii_uppercase + string.digits) for _ in range(4))
@@ -224,7 +221,6 @@ while True:
                 ack = client_socket.recv(1024)
                 data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
                 data_dic[user_id][comp_user].actions = ''
-                print(comp_user)
         # Case user didn't log in yet with this computer
         else:
             # copy the user files to the new computer
@@ -236,4 +232,3 @@ while True:
             data_dic[user_id][comp_user].history += data_dic[user_id][comp_user].actions
             data_dic[user_id][comp_user].actions = ''
     client_socket.close()
-    print('Client disconnected')

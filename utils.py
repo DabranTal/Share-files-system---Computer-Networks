@@ -15,6 +15,7 @@ INT_IN_BITS = 32
 BITS_ON_BYTE = 8
 
 
+# The client struct
 class Folder:
     path = None
     sub_folders = []
@@ -26,6 +27,7 @@ class Folder:
         self.files = []
 
 
+# The server dictionary struct
 class UserDic:
     comp_id = ''
     folders_map = None
@@ -39,6 +41,7 @@ class UserDic:
         self.history = ' '
 
 
+# This function separate the header and return the parts in array
 def data_analysis(data):
     if b'stop' == data:
         return
@@ -60,10 +63,10 @@ def data_analysis(data):
     backslash = get_backslash()
     if header_data[3][0] == backslash:
         header_data[3] = header_data[3][1:]
-    # header_data[3] = header_data[3].replace(backslash, '')
     return header_data
 
 
+# This function return the backslash according to the platform
 def get_backslash():
     if platform == "win32":
         return '\\'
@@ -71,6 +74,7 @@ def get_backslash():
         return '/'
 
 
+# This function return the relative path folder/file
 def get_relative_path(full_path, main_folder_path):
     main_path_len = len(main_folder_path)
     full_path_len = len(full_path)
@@ -85,6 +89,7 @@ def get_relative_path(full_path, main_folder_path):
     return relative_array
 
 
+# This function create sub folders by the sub folders list
 def create_sub_folders(folder_path, main_path, sock):
     relative_path = get_relative_path(folder_path, main_path)
     if relative_path is None:
@@ -97,6 +102,7 @@ def create_sub_folders(folder_path, main_path, sock):
     get_ack = sock.recv(1024)
 
 
+# This function deletes folder from the cloud server
 def delete_from_cloud(folder):
     for file in folder.files:
         os.remove(file)
@@ -105,6 +111,7 @@ def delete_from_cloud(folder):
         os.rmdir(fold.path)
 
 
+# This function uploads folder from the cloud server
 def upload_to_cloud(folder, main_path, sock, user_id):
     for fold in folder.sub_folders:
         create_sub_folders(fold.path, main_path, sock)
@@ -114,10 +121,12 @@ def upload_to_cloud(folder, main_path, sock, user_id):
         upload_to_cloud(fold, main_path, sock, user_id)
 
 
+# This function calls to upload to cloud function
 def copy_data(src_map, src_path, dst_socket, user_id):
     upload_to_cloud(src_map, src_path, dst_socket, user_id)
 
 
+# This function sends files between client to server and between server to client
 def send_file(file, main_path, sock):
     relative_path = get_relative_path(file, main_path)
     if relative_path is None:
@@ -138,6 +147,7 @@ def send_file(file, main_path, sock):
     ans3 = sock.recv(1024)
 
 
+# This function create folder
 def create_a_folder(folder_name, directory):
     path = os.path.join(directory, folder_name)
     if not os.path.exists(path):
@@ -145,11 +155,11 @@ def create_a_folder(folder_name, directory):
     return path
 
 
+# This function gets files between client to server and between server to client
 def get_files(user_folder_path, sock):
     backslash = get_backslash()
     header = sock.recv(1024)
     sock.send(b'ack')
-    print(header)
     while header != b'enough':
         header = data_analysis(header)
         if ADD_FOLDER == int(header[0]):
@@ -167,10 +177,7 @@ def get_files(user_folder_path, sock):
         sock.send(b'ack')
 
 
-def is_this_path_exits(path):
-    return os.path.exists(path)
-
-
+# This function build struct for client
 def build_folders_map(folder, directory, backslash, folder_path):
     for file in directory:
         if os.path.isdir(folder_path + backslash + file):

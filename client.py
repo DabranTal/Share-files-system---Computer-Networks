@@ -35,7 +35,6 @@ def rebuild_folder_map():
 
 # This function called when Create is happening on the folder our observer cover
 def on_created(event):
-    print('1')
     # Let changes done
     time.sleep(0.1)
     if os.path.exists(event.src_path):
