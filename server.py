@@ -13,6 +13,8 @@ UPDATE = '3'
 DELETE = '4'
 
 
+
+
 def run_operations(user_id, comp_user, client_socket):
     operations = split_operations(data_dic[user_id][comp_user].actions)
     for op in operations:
@@ -184,7 +186,7 @@ while True:
                 to_do_list = split_operations(data_dic.get(user_id).get(comp_user).actions)
                 for action in to_do_list:
                     if action[1] == DELETE:
-                        if os.path.isfile(os.path.join(user_folder_path, action[0])):
+                        if os.path.isfile(user_folder_path + backslash + action[0]):
                             new_action = action[0] + str(1000 - len(action[0])) + 'f' + DELETE
                         else:
                             new_action = action[0] + str(1000 - len(action[0])) + 'd' + DELETE

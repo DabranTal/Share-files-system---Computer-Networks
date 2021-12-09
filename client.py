@@ -104,6 +104,7 @@ def on_moved(event):
     print(f"ok ok ok, someone moved {event.src_path} to {event.dest_path}")
     # FOR CONTINUE WITH UPDATE FILES WE NEED TO SCAN ALL THE 'MAIN_FOLDER' MAP
     # AND THE IF THE SRC.PATH DIDN'T EXIST ITS A SIGN THAT UPDATE ARE OCCURRED
+    time.sleep(1)
     if check_if_exist_path(main_folder, event.src_path) != 0:
         server_socket, temp_user_id, temp_comp_id = start_connection(user_id, comp_id, folder_path)
         ack = server_socket.recv(1024)
@@ -184,6 +185,8 @@ if temp_user_id != user_id.encode():
 else:
     ack = server_socket.recv(1024)
     utils.get_files(main_folder.path, server_socket)
+    my_directory = os.listdir(folder_path)
+    utils.build_folders_map(main_folder, my_directory, backslash, folder_path)
 server_socket.close()
 
 patterns = ["*"]
