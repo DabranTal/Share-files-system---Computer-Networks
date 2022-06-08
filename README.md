@@ -7,7 +7,7 @@ Our system supports deleting, editing, and creating files and directories.
 
 Every action on one of the directories that share brings an update on the other directories that share.
 
-##### Thechnologies
+### Thechnologies
 
 Our system has been written in Python and uses the "watchdog" API library for monitoring and the "socket" API library to communicate between directories.
 
