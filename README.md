@@ -12,3 +12,9 @@ Every action on one of the directories that share brings an update on the other 
 Our system has been written in Python and uses the "watchdog" API library for monitoring and the "socket" API library to communicate between directories.
 
 We used our knowledge of computer networks to create ongoing communication using TCP sockets.
+
+### Developers
+
+- Ido Tavron
+- Tal Dabran
+
